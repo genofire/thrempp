@@ -1,4 +1,10 @@
-# Thrempp [![pipeline status](https://dev.sum7.eu/genofire/thrempp/badges/master/pipeline.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines) [![coverage report](https://dev.sum7.eu/genofire/thrempp/badges/master/coverage.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
+# Thrempp
+[![pipeline status](https://dev.sum7.eu/genofire/thrempp/badges/master/pipeline.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
+[![coverage report](https://dev.sum7.eu/genofire/thrempp/badges/master/coverage.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
+[![Go Report Card](https://goreportcard.com/badge/dev.sum7.eu/genofire/thrempp)](https://goreportcard.com/report/dev.sum7.eu/genofire/thrempp)
+[![GoDoc](https://godoc.org/dev.sum7.eu/genofire/thrempp?status.svg)](https://godoc.org/dev.sum7.eu/genofire/thrempp)
+
+
 XMPP - Transport
 
 ATM planned support for Threema only

@@ -43,11 +43,11 @@ func (c *Config) recieve(packets chan xmpp.Packet) {
 			} else {
 				p.PacketAttrs.From += "@" + c.Host
 			}
-			loggerMSG := logger.WithFields(map[string]interface{}{
+			logger.WithFields(map[string]interface{}{
 				"from": p.PacketAttrs.From,
 				"to":   p.PacketAttrs.To,
-			})
-			loggerMSG.Debug(p.Body)
+				"id":   p.PacketAttrs.Id,
+			}).Debug(p.XMPPFormat())
 			c.xmpp.Send(p)
 		default:
 			log.Warn("ignoring packet:", packet)
@@ -90,6 +90,7 @@ func (c *Config) sender() {
 						Features: []xmpp.Feature{
 							{Var: "http://jabber.org/protocol/disco#info"},
 							{Var: "http://jabber.org/protocol/disco#item"},
+							{Var: xmpp.NSSpaceXEP0184Receipt},
 						},
 					}
 					iq.AddPayload(&payload)
@@ -124,6 +125,11 @@ func (c *Config) sender() {
 			}
 
 		case xmpp.Message:
+			logger.WithFields(map[string]interface{}{
+				"from": p.PacketAttrs.From,
+				"to":   p.PacketAttrs.To,
+				"id":   p.PacketAttrs.Id,
+			}).Debug(p.XMPPFormat())
 			c.comp.Send(packet)
 
 		case xmpp.Presence:

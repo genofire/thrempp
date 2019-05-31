@@ -16,14 +16,12 @@ type Threema struct {
 	component.Component
 	out        chan xmpp.Packet
 	accountJID map[string]*Account
-	accountTID map[string]*Account
 }
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
 	return &Threema{
 		out:        make(chan xmpp.Packet),
 		accountJID: make(map[string]*Account),
-		accountTID: make(map[string]*Account),
 	}, nil
 }
 
@@ -35,7 +33,7 @@ func (t *Threema) Connect() (chan xmpp.Packet, error) {
 		log.WithFields(map[string]interface{}{
 			"jid":     jid.String(),
 			"threema": string(a.TID),
-		}).Debug("connected")
+		}).Info("connected")
 	}
 	return t.out, nil
 }
@@ -45,11 +43,6 @@ func (t *Threema) Send(packet xmpp.Packet) {
 		from := models.ParseJID(p.PacketAttrs.From)
 		to := models.ParseJID(p.PacketAttrs.To)
 
-		logger := log.WithFields(map[string]interface{}{
-			"from": from,
-			"to":   to,
-		})
-		logger.Debug(p.Body)
 		if to.IsDomain() {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = t.Bot(from, p.Body)
@@ -66,7 +59,7 @@ func (t *Threema) Send(packet xmpp.Packet) {
 		}
 
 		threemaID := strings.ToUpper(to.Local)
-		if err := account.Send(threemaID, p.Body); err != nil {
+		if err := account.Send(threemaID, p); err != nil {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = err.Error()
 			t.out <- msg

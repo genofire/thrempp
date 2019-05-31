@@ -7,34 +7,58 @@ import (
 	"gosrc.io/xmpp"
 
 	"dev.sum7.eu/genofire/thrempp/component"
+	"dev.sum7.eu/genofire/thrempp/models"
 )
 
 type Threema struct {
 	component.Component
-	out chan xmpp.Packet
+	out        chan xmpp.Packet
+	accountJID map[string]*Account
+	accountTID map[string]*Account
 }
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
-	return &Threema{}, nil
+	t := &Threema{
+		out:        make(chan xmpp.Packet),
+		accountJID: make(map[string]*Account),
+		accountTID: make(map[string]*Account),
+	}
+	// TODO load accounts on startup
+	return t, nil
 }
 
 func (t *Threema) Connect() (chan xmpp.Packet, error) {
-	t.out = make(chan xmpp.Packet)
 	return t.out, nil
 }
 func (t *Threema) Send(packet xmpp.Packet) {
 	switch p := packet.(type) {
 	case xmpp.Message:
-		attrs := p.PacketAttrs
-		account := t.getAccount(attrs.From)
-		log.WithFields(map[string]interface{}{
-			"from": attrs.From,
-			"to":   attrs.To,
-		}).Debug(p.Body)
-		threemaID := strings.ToUpper(strings.Split(attrs.To, "@")[0])
-		err := account.Send(threemaID, p.Body)
-		if err != nil {
-			msg := xmpp.NewMessage("chat", "", attrs.From, "", "en")
+		from := models.ParseJID(p.PacketAttrs.From)
+		to := models.ParseJID(p.PacketAttrs.To)
+
+		logger := log.WithFields(map[string]interface{}{
+			"from": from,
+			"to":   to,
+		})
+		logger.Debug(p.Body)
+		if to.IsDomain() {
+			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
+			msg.Body = t.Bot(from, p.Body)
+			t.out <- msg
+			return
+		}
+
+		account := t.getAccount(from)
+		if account == nil {
+			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
+			msg.Body = "It was not possible to send, becouse we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
+			t.out <- msg
+			return
+		}
+
+		threemaID := strings.ToUpper(to.Local)
+		if err := account.Send(threemaID, p.Body); err != nil {
+			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = err.Error()
 			t.out <- msg
 		}

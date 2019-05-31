@@ -1,7 +1,11 @@
 package threema
 
 import (
+	"strconv"
+
+	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
+	"gosrc.io/xmpp"
 
 	"dev.sum7.eu/genofire/golang-lib/database"
 
@@ -37,6 +41,7 @@ func (t *Threema) getAccount(jid *models.JID) *Account {
 	tid.Nick = o3.NewPubNick("xmpp:" + jid.String())
 
 	a := &Account{AccountThreema: account}
+	a.XMPP = *jid
 	a.Session = o3.NewSessionContext(tid)
 	a.send, a.recieve, err = a.Session.Run()
 
@@ -45,9 +50,33 @@ func (t *Threema) getAccount(jid *models.JID) *Account {
 		return nil
 	}
 
+	go a.reciever(t.out)
+
 	t.accountJID[jid.String()] = a
 	t.accountTID[string(a.TID)] = a
 	return a
+}
+
+func (a *Account) reciever(out chan<- xmpp.Packet) {
+	for receivedMessage := range a.recieve {
+		if receivedMessage.Err != nil {
+			log.Warnf("Error Receiving Message: %s\n", receivedMessage.Err)
+			continue
+		}
+		switch msg := receivedMessage.Msg.(type) {
+		case o3.TextMessage:
+			sender := msg.Sender().String()
+			if string(a.TID) == sender {
+				continue
+			}
+			xMSG := xmpp.NewMessage("chat", sender, a.XMPP.String(), strconv.FormatUint(msg.ID(), 10), "en")
+			xMSG.Body = msg.Text()
+			out <- xMSG
+		case o3.DeliveryReceiptMessage:
+			// msg.MsgID()
+
+		}
+	}
 }
 
 func (a *Account) Send(to string, msg string) error {

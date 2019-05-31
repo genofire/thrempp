@@ -6,6 +6,8 @@ import (
 	"github.com/bdlm/log"
 	"gosrc.io/xmpp"
 
+	"dev.sum7.eu/genofire/golang-lib/database"
+
 	"dev.sum7.eu/genofire/thrempp/component"
 	"dev.sum7.eu/genofire/thrempp/models"
 )
@@ -18,16 +20,23 @@ type Threema struct {
 }
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
-	t := &Threema{
+	return &Threema{
 		out:        make(chan xmpp.Packet),
 		accountJID: make(map[string]*Account),
 		accountTID: make(map[string]*Account),
-	}
-	// TODO load accounts on startup
-	return t, nil
+	}, nil
 }
 
 func (t *Threema) Connect() (chan xmpp.Packet, error) {
+	var jids []*models.JID
+	database.Read.Find(&jids)
+	for _, jid := range jids {
+		a := t.getAccount(jid)
+		log.WithFields(map[string]interface{}{
+			"jid":     jid.String(),
+			"threema": string(a.TID),
+		}).Debug("connected")
+	}
 	return t.out, nil
 }
 func (t *Threema) Send(packet xmpp.Packet) {

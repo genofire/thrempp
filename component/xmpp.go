@@ -113,7 +113,7 @@ func (c *Config) sender() {
 					_ = c.xmpp.Send(iq)
 				}
 			default:
-				logger.Warn("ignoring iq packet", inner)
+				logger.Debug("ignoring iq packet", inner)
 				xError := xmpp.Err{
 					Code:   501,
 					Reason: "feature-not-implemented",
@@ -127,10 +127,10 @@ func (c *Config) sender() {
 			c.comp.Send(packet)
 
 		case xmpp.Presence:
-			logger.Info("Received presence:", p.Type)
+			logger.Debug("Received presence:", p.Type)
 
 		default:
-			logger.Warn("ignoring packet:", packet)
+			logger.Debug("ignoring packet:", packet)
 		}
 	}
 }

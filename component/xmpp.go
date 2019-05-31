@@ -33,26 +33,47 @@ func (c *Config) Start() error {
 	return nil
 }
 
-func (c *Config) recieve(chan xmpp.Packet) {
+func (c *Config) recieve(packets chan xmpp.Packet) {
+	logger := log.WithField("type", c.Type)
+	for packet := range packets {
+		switch p := packet.(type) {
+		case xmpp.Message:
+			if p.PacketAttrs.From == "" {
+				p.PacketAttrs.From = c.Host
+			} else {
+				p.PacketAttrs.From += "@" + c.Host
+			}
+			loggerMSG := logger.WithFields(map[string]interface{}{
+				"from": p.PacketAttrs.From,
+				"to":   p.PacketAttrs.To,
+			})
+			loggerMSG.Debug(p.Body)
+			c.xmpp.Send(p)
+		default:
+			log.Warn("ignoring packet:", packet)
+		}
+	}
 }
 func (c *Config) sender() {
 	logger := log.WithField("type", c.Type)
 	for {
-		logger.Debug("wait fo recieve")
 		packet, err := c.xmpp.ReadPacket()
 		if err != nil {
 			logger.Panicf("connection closed%s", err)
 			return
 		}
-		logger.Debug("recieve")
 
 		switch p := packet.(type) {
 		case xmpp.IQ:
 			attrs := p.PacketAttrs
+			loggerIQ := logger.WithFields(map[string]interface{}{
+				"from": attrs.From,
+				"to":   attrs.To,
+			})
 
 			switch inner := p.Payload[0].(type) {
 			case *xmpp.DiscoInfo:
-				logger.Debug("Disco Info")
+				loggerIQ.Debug("Disco Info")
 				if p.Type == "get" {
 					iq := xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
 					var identity xmpp.Identity
@@ -76,7 +97,7 @@ func (c *Config) sender() {
 					_ = c.xmpp.Send(iq)
 				}
 			case *xmpp.DiscoItems:
-				logger.Debug("DiscoItems")
+				loggerIQ.Debug("DiscoItems")
 				if p.Type == "get" {
 					iq := xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
 
@@ -103,7 +124,7 @@ func (c *Config) sender() {
 			}
 
 		case xmpp.Message:
-			logger.Info("Received message:", p.Body)
+			c.comp.Send(packet)
 
 		case xmpp.Presence:
 			logger.Info("Received presence:", p.Type)

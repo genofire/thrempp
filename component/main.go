@@ -31,6 +31,10 @@ func Load(configs []Config) {
 			log.WithField("type", config.Type).Panic(err)
 		}
 		config.comp = comp
+		err = config.Start()
+		if err != nil {
+			log.WithField("type", config.Type).Panic(err)
+		}
 		log.WithField("type", config.Type).Infof("component for %s started", config.Host)
 	}
 }

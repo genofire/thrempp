@@ -1,0 +1,33 @@
+image: golang:latest
+stages:
+  - build
+  - test
+
+before_script:
+  - mkdir -p /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE/
+  - cp -R $CI_PROJECT_DIR /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE
+  - cd /go/src/dev.sum7.eu/$CI_PROJECT_PATH
+  - go get -v dev.sum7.eu/$CI_PROJECT_PATH
+
+build-my-project:
+  stage: build
+  script:
+    - mkdir $CI_PROJECT_DIR/bin/
+    - cp /go/bin/$CI_PROJECT_NAME $CI_PROJECT_DIR/bin/$CI_PROJECT_NAME
+  artifacts:
+    paths:
+      - bin/thrempp
+      - config_example.toml
+
+test-my-project:
+  stage: test
+  script:
+    - ./.ci/check-gofmt
+    - ./.ci/check-testfiles
+    - go test $(go list ./... | grep -v /vendor/) -v -coverprofile .testCoverage.txt
+    - go tool cover -func=.testCoverage.txt
+
+test-race-my-project:
+  stage: test
+  script:
+    - go test -race ./...

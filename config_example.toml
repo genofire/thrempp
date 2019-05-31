@@ -1,0 +1,15 @@
+log_level = 50
+
+[[component]]
+type = "threema"
+host = "threema.chat.sum7.eu"
+connection = "localhost:5347"
+secret = "change_me"
+
+[database]
+type = "sqlite3"
+logging = false
+connection = "./thrempp.db"
+# For Master-Slave cluster
+# read_connection = ""
+

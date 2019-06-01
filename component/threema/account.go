@@ -21,9 +21,9 @@ type Account struct {
 	readedMSG    map[uint64]string
 }
 
-func (t *Threema) getAccount(jid *models.JID) *Account {
+func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 	if a, ok := t.accountJID[jid.String()]; ok {
-		return a
+		return a, nil
 	}
 	account := models.AccountThreema{}
 
@@ -36,28 +36,27 @@ func (t *Threema) getAccount(jid *models.JID) *Account {
 	var lsk [32]byte
 	copy(lsk[:], account.LSK[:])
 	tid, err := o3.NewThreemaID(string(account.TID), lsk, o3.AddressBook{})
-	// TODO error handling
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	tid.Nick = o3.NewPubNick("xmpp:" + jid.String())
 
 	a := &Account{AccountThreema: account}
-	a.XMPP = *jid
 	a.Session = o3.NewSessionContext(tid)
 	a.send, a.recieve, err = a.Session.Run()
+
+	if err != nil {
+		return nil, err
+	}
+
+	a.XMPP = *jid
 	a.deliveredMSG = make(map[uint64]string)
 	a.readedMSG = make(map[uint64]string)
-
-	// TODO error handling
-	if err != nil {
-		return nil
-	}
 
 	go a.reciever(t.out)
 
 	t.accountJID[jid.String()] = a
-	return a
+	return a, nil
 }
 
 func (a *Account) reciever(out chan<- xmpp.Packet) {

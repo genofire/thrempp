@@ -29,15 +29,23 @@ func (t *Threema) Connect() (chan xmpp.Packet, error) {
 	var jids []*models.JID
 	database.Read.Find(&jids)
 	for _, jid := range jids {
-		a := t.getAccount(jid)
-		log.WithFields(map[string]interface{}{
-			"jid":     jid.String(),
-			"threema": string(a.TID),
-		}).Info("connected")
+		logger := log.WithField("jid", jid.String())
+		a, err := t.getAccount(jid)
+		if err != nil {
+			logger.Warnf("unable to connect%s", err)
+			continue
+		}
+		logger = logger.WithField("threema", string(a.TID))
+		logger.Info("connected")
 	}
 	return t.out, nil
 }
 func (t *Threema) Send(packet xmpp.Packet) {
+	if p := t.send(packet); p != nil {
+		t.out <- p
+	}
+}
+func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 	switch p := packet.(type) {
 	case xmpp.Message:
 		from := models.ParseJID(p.PacketAttrs.From)
@@ -46,27 +54,26 @@ func (t *Threema) Send(packet xmpp.Packet) {
 		if to.IsDomain() {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = t.Bot(from, p.Body)
-			t.out <- msg
-			return
+			return msg
 		}
 
-		account := t.getAccount(from)
-		if account == nil {
+		account, err := t.getAccount(from)
+		if err != nil {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = "It was not possible to send, becouse we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
-			t.out <- msg
-			return
+			return msg
 		}
 
 		threemaID := strings.ToUpper(to.Local)
 		if err := account.Send(threemaID, p); err != nil {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
 			msg.Body = err.Error()
-			t.out <- msg
+			return msg
 		}
 	default:
 		log.Warnf("unkown package%v", p)
 	}
+	return nil
 }
 
 func init() {

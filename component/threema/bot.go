@@ -22,8 +22,8 @@ func (t *Threema) Bot(from *models.JID, request string) string {
 	case "generate":
 
 		// test if account already exists
-		account := t.getAccount(from)
-		if account != nil {
+		account, err := t.getAccount(from)
+		if err == nil {
 			return fmt.Sprintf("you already has the threema account with id: %s", string(account.TID))
 		}
 
@@ -48,7 +48,7 @@ func (t *Threema) Bot(from *models.JID, request string) string {
 		database.Write.Create(&a)
 
 		// fetch account and connect
-		account = t.getAccount(from)
+		account, err = t.getAccount(from)
 		tid := string(account.TID)
 		if tid != "" {
 			logger.WithField("threema", tid).Info("generate")

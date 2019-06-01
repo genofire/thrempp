@@ -18,6 +18,7 @@ type Account struct {
 	send         chan<- o3.Message
 	recieve      <-chan o3.ReceivedMsg
 	deliveredMSG map[uint64]string
+	readedMSG    map[uint64]string
 }
 
 func (t *Threema) getAccount(jid *models.JID) *Account {
@@ -46,6 +47,7 @@ func (t *Threema) getAccount(jid *models.JID) *Account {
 	a.Session = o3.NewSessionContext(tid)
 	a.send, a.recieve, err = a.Session.Run()
 	a.deliveredMSG = make(map[uint64]string)
+	a.readedMSG = make(map[uint64]string)
 
 	// TODO error handling
 	if err != nil {
@@ -73,38 +75,62 @@ func (a *Account) reciever(out chan<- xmpp.Packet) {
 			xMSG := xmpp.NewMessage("chat", sender, a.XMPP.String(), strconv.FormatUint(msg.ID(), 10), "en")
 			xMSG.Body = msg.Text()
 			xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptRequest{})
+			xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerMarkable{})
 			out <- xMSG
+
 		case o3.DeliveryReceiptMessage:
-			if id, ok := a.deliveredMSG[msg.MsgID()]; ok {
-				xMSG := xmpp.NewMessage("chat", msg.Sender().String(), a.XMPP.String(), "", "en")
-				log.Warnf("found id %s", id)
-				xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptReceived{
-					Id: id,
-				})
-				out <- xMSG
-				delete(a.deliveredMSG, msg.MsgID())
-			} else {
-				log.Warnf("found not id in cache to announce received on xmpp side")
+			msgID := msg.MsgID()
+			xMSG := xmpp.NewMessage("chat", msg.Sender().String(), a.XMPP.String(), "", "en")
+
+			if msg.Status() == o3.MSGDELIVERED {
+				if id, ok := a.deliveredMSG[msgID]; ok {
+					xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptReceived{Id: id})
+					xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerReceived{Id: id})
+					delete(a.deliveredMSG, msgID)
+				} else {
+					log.Warnf("found not id in cache to announce received on xmpp side")
+				}
+			}
+			if msg.Status() == o3.MSGREAD {
+				if id, ok := a.readedMSG[msgID]; ok {
+					xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerDisplayed{Id: id})
+					delete(a.readedMSG, msgID)
+				} else {
+					log.Warnf("found not id in cache to announce readed on xmpp side")
+				}
 			}
 
+			if len(xMSG.Extensions) > 0 {
+				out <- xMSG
+			}
 		}
 	}
 }
 
 func (a *Account) Send(to string, msg xmpp.Message) error {
-	reci := ""
+	msgID := ""
+	readed := false
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
 		case *xmpp.ReceiptReceived:
-			reci = ex.Id
+			msgID = ex.Id
+		case *xmpp.ChatMarkerReceived:
+			msgID = ex.Id
+		case *xmpp.ChatMarkerDisplayed:
+			readed = true
+			msgID = ex.Id
 		}
 	}
-	if reci != "" {
-		id, err := strconv.ParseUint(reci, 10, 64)
+	if msgID != "" {
+		id, err := strconv.ParseUint(msgID, 10, 64)
 		if err != nil {
 			return err
 		}
-		drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, o3.MSGDELIVERED)
+		msgType := o3.MSGDELIVERED
+		if readed {
+			msgType = o3.MSGREAD
+		}
+		drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, msgType)
 		if err != nil {
 			return err
 		}
@@ -112,6 +138,7 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 		log.WithFields(map[string]interface{}{
 			"tid":    to,
 			"msg_id": id,
+			"type":   msgType,
 		}).Debug("delivered")
 		return nil
 	}
@@ -121,6 +148,7 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 		return err
 	}
 	a.deliveredMSG[msg3.ID()] = msg.Id
+	a.readedMSG[msg3.ID()] = msg.Id
 	a.send <- msg3
 	return nil
 }

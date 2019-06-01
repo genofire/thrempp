@@ -91,6 +91,7 @@ func (c *Config) sender() {
 							{Var: "http://jabber.org/protocol/disco#info"},
 							{Var: "http://jabber.org/protocol/disco#item"},
 							{Var: xmpp.NSSpaceXEP0184Receipt},
+							{Var: xmpp.NSSpaceXEP0333ChatMarkers},
 						},
 					}
 					iq.AddPayload(&payload)

@@ -16,12 +16,14 @@ type Threema struct {
 	component.Component
 	out        chan xmpp.Packet
 	accountJID map[string]*Account
+	bot        map[string]*Bot
 }
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
 	return &Threema{
 		out:        make(chan xmpp.Packet),
 		accountJID: make(map[string]*Account),
+		bot:        make(map[string]*Bot),
 	}, nil
 }
 
@@ -52,8 +54,12 @@ func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 		to := models.ParseJID(p.PacketAttrs.To)
 
 		if to.IsDomain() {
+			if from == nil {
+				log.Warn("recieve message without sender")
+				return nil
+			}
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
-			msg.Body = t.Bot(from, p.Body)
+			msg.Body = t.getBot(from).Handle(p.Body)
 			return msg
 		}
 
@@ -71,7 +77,7 @@ func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 			return msg
 		}
 	default:
-		log.Warnf("unkown package%v", p)
+		log.Warnf("unkown package: %v", p)
 	}
 	return nil
 }

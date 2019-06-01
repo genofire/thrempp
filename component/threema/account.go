@@ -1,6 +1,7 @@
 package threema
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/bdlm/log"
@@ -26,6 +27,10 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 		return a, nil
 	}
 	account := models.AccountThreema{}
+
+	if database.Read == nil {
+		return nil, errors.New("no database connection")
+	}
 
 	database.Read.Where("xmpp_id = (?)",
 		database.Read.Table(jid.TableName()).Select("id").Where(map[string]interface{}{

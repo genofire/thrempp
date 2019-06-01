@@ -58,6 +58,7 @@ func TestSend(t *testing.T) {
 	tr := Threema{
 		out:        out,
 		accountJID: make(map[string]*Account),
+		bot:        make(map[string]*Bot),
 	}
 	go func() {
 		tr.Send(xmpp.Message{
@@ -76,11 +77,14 @@ func TestSend(t *testing.T) {
 
 	// chat with bot
 	p = tr.send(xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{To: "example.org"},
+		PacketAttrs: xmpp.PacketAttrs{
+			From: "a@example.com",
+			To:   "example.org",
+		},
 	})
 	assert.NotNil(p)
 	msg = p.(xmpp.Message)
-	assert.Equal("command not supported", msg.Body)
+	assert.Contains(msg.Body, "command not found")
 
 	// chat with delivier error
 	database.Open(database.Config{

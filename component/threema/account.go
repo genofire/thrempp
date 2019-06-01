@@ -139,7 +139,7 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 			"tid":    to,
 			"msg_id": id,
 			"type":   msgType,
-		}).Debug("delivered")
+		}).Debug("update status of threema message")
 		return nil
 	}
 

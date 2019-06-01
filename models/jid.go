@@ -37,7 +37,7 @@ func (jid *JID) String() string {
 		return ""
 	}
 	str := jid.Domain
-	if jid.Local != "" {
+	if str != "" && jid.Local != "" {
 		str = jid.Local + "@" + str
 	}
 	return str
@@ -45,15 +45,6 @@ func (jid *JID) String() string {
 
 func (jid *JID) IsDomain() bool {
 	return jid != nil && jid.Local == "" && jid.Domain != ""
-}
-
-func GetJID(jidStr string) (jid *JID) {
-	jidS := ParseJID(jidStr)
-	err := database.Read.Where(jidS).First(jid).Error
-	if err != nil {
-		return nil
-	}
-	return
 }
 
 var jidRegex *regexp.Regexp

@@ -50,54 +50,6 @@ var serveCmd = &cobra.Command{
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		sig := <-sigs
 		log.Infof("received %s", sig)
-
-		/*
-			server := o3.ThreemaRest{}
-
-			var thrAccount models.AccountThreema
-			if err := database.Read.First(&thrAccount).Error; err != nil {
-				id, _ := server.CreateIdentity()
-				thrAccount.TID = make([]byte, len(id.ID))
-				thrAccount.LSK = make([]byte, len(id.LSK))
-				copy(thrAccount.TID, id.ID[:])
-				copy(thrAccount.LSK, id.LSK[:])
-				database.Write.Create(&thrAccount)
-			}
-
-			log.Warnf("%s", thrAccount.TID)
-			var lsk [32]byte
-			copy(lsk[:], thrAccount.LSK[:])
-			tid, err := o3.NewThreemaID(string(thrAccount.TID), lsk, o3.AddressBook{})
-			tid.Nick = o3.NewPubNick("xmpp:geno@fireorbit.de")
-
-			ctx := o3.NewSessionContext(tid)
-
-			// let the session begin
-			log.Info("Starting session")
-			sendMsgChan, receiveMsgChan, err := ctx.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			// handle incoming messages
-			for receivedMessage := range receiveMsgChan {
-				if receivedMessage.Err != nil {
-					log.Errorf("Error Receiving Message: %s\n", receivedMessage.Err)
-					continue
-				}
-				switch msg := receivedMessage.Msg.(type) {
-				case o3.TextMessage:
-					if tid.String() == msg.Sender().String() {
-						continue
-					}
-					qoute := fmt.Sprintf("> %s: %s\n%s", msg.Sender(), msg.Text(), "Exactly!")
-					err = ctx.SendTextMessage(msg.Sender().String(), qoute, sendMsgChan)
-					if err != nil {
-						log.Fatal(err)
-					}
-
-				}
-			}
-		*/
 	},
 }
 

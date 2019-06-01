@@ -6,8 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// correct run on root of this project
-
 func TestServe(t *testing.T) {
 	assert := assert.New(t)
 

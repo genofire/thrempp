@@ -3,6 +3,9 @@ stages:
   - build
   - test
 
+variables:
+        GIT_SUBMODULE_STRATEGY: recursive
+
 before_script:
   - mkdir -p /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE/
   - cp -R $CI_PROJECT_DIR /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE
@@ -24,10 +27,12 @@ test-my-project:
   script:
     - ./.ci/check-gofmt
     - ./.ci/check-testfiles
+    - go get -d github.com/stretchr/testify/assert
     - go test $(go list ./... | grep -v /vendor/) -v -coverprofile .testCoverage.txt
     - go tool cover -func=.testCoverage.txt
 
 test-race-my-project:
   stage: test
   script:
+    - go get -d github.com/stretchr/testify/assert
     - go test -race ./...

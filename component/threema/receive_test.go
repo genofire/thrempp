@@ -34,14 +34,16 @@ func TestReceive(t *testing.T) {
 	a := createDummyAccount()
 
 	// receiving/skip error
-	p := a.receiving(o3.ReceivedMsg{
+	p, err := a.receiving(o3.ReceivedMsg{
 		Err: errors.New("dummy"),
 	})
 	assert.Nil(p)
+	assert.Error(err)
 
 	// nothing to receiving
-	p = a.receiving(o3.ReceivedMsg{})
+	p, err = a.receiving(o3.ReceivedMsg{})
 	assert.Nil(p)
+	assert.Error(err)
 }
 
 func TestReceiveText(t *testing.T) {
@@ -58,26 +60,40 @@ func TestReceiveText(t *testing.T) {
 	}
 	txtMsg, err := o3.NewTextMessage(&session, threemaID, "Oojoh0Ah")
 	assert.NoError(err)
-	p := a.receiving(o3.ReceivedMsg{
+	p, err := a.receiving(o3.ReceivedMsg{
 		Msg: txtMsg,
 	})
+	assert.NoError(err)
 	xMSG, ok := p.(xmpp.Message)
 	assert.True(ok)
 	assert.Equal("Oojoh0Ah", xMSG.Body)
+}
 
-	// receiving/skip text to own id
-	session = o3.SessionContext{
+func TestReceiveImage(t *testing.T) {
+	assert := assert.New(t)
+
+	a := createDummyAccount()
+	a.threema = &Threema{}
+
+	/* receiving image
+	session := o3.SessionContext{
 		ID: o3.ThreemaID{
-			ID:   threemaIDByte,
+			ID:   o3.NewIDString("12345678"),
 			Nick: o3.NewPubNick("user"),
 		},
-	}
-	txtMsg, err = o3.NewTextMessage(&session, threemaID, "Aesh8shu")
-	assert.NoError(err)
-	p = a.receiving(o3.ReceivedMsg{
-		Msg: txtMsg,
+	}*/
+	imgMsg := o3.ImageMessage{}
+	_, err := a.receiving(o3.ReceivedMsg{
+		Msg: imgMsg,
 	})
-	assert.Nil(p)
+	assert.Error(err)
+
+	a.threema.httpUploadPath = "/tmp"
+	imgMsg = o3.ImageMessage{}
+	_, err = a.receiving(o3.ReceivedMsg{
+		Msg: imgMsg,
+	})
+	assert.Error(err)
 }
 
 func TestReceiveDeliveryReceipt(t *testing.T) {
@@ -98,34 +114,38 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 
 	drm, err := o3.NewDeliveryReceiptMessage(&session, threemaID, msgID, o3.MSGDELIVERED)
 	assert.NoError(err)
-	p := a.receiving(o3.ReceivedMsg{
+	p, err := a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
+	assert.NoError(err)
 	xMSG, ok := p.(xmpp.Message)
 	assert.True(ok)
 	rr := xMSG.Extensions[0].(xmpp.ReceiptReceived)
 	assert.Equal("im4aeseeh1IbaQui", rr.Id)
 
 	// receiving delivered -> not in cache
-	p = a.receiving(o3.ReceivedMsg{
+	p, err = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
+	assert.NoError(err)
 	assert.Nil(p)
 
 	// receiving readed
 	drm, err = o3.NewDeliveryReceiptMessage(&session, threemaID, msgID, o3.MSGREAD)
 	assert.NoError(err)
-	p = a.receiving(o3.ReceivedMsg{
+	p, err = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
+	assert.NoError(err)
 	xMSG, ok = p.(xmpp.Message)
 	assert.True(ok)
 	cmdd := xMSG.Extensions[0].(xmpp.ChatMarkerDisplayed)
 	assert.Equal("im4aeseeh1IbaQui", cmdd.Id)
 
 	// receiving delivered -> not in cache
-	p = a.receiving(o3.ReceivedMsg{
+	p, err = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
+	assert.NoError(err)
 	assert.Nil(p)
 }

@@ -1,6 +1,7 @@
 package threema
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/bdlm/log"
@@ -14,17 +15,34 @@ import (
 
 type Threema struct {
 	component.Component
-	out        chan xmpp.Packet
-	accountJID map[string]*Account
-	bot        map[string]*Bot
+	out            chan xmpp.Packet
+	accountJID     map[string]*Account
+	bot            map[string]*Bot
+	httpUploadPath string
+	httpUploadURL  string
 }
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
-	return &Threema{
+	t := &Threema{
 		out:        make(chan xmpp.Packet),
 		accountJID: make(map[string]*Account),
 		bot:        make(map[string]*Bot),
-	}, nil
+	}
+	if pathI, ok := config["http_upload_path"]; ok {
+		if path, ok := pathI.(string); ok {
+			t.httpUploadPath = path
+		} else {
+			return nil, errors.New("wrong format of http_upload_path")
+		}
+	}
+	if urlI, ok := config["http_upload_url"]; ok {
+		if url, ok := urlI.(string); ok {
+			t.httpUploadURL = url
+		} else {
+			return nil, errors.New("wrong format of http_upload_url")
+		}
+	}
+	return t, nil
 }
 
 func (t *Threema) Connect() (chan xmpp.Packet, error) {

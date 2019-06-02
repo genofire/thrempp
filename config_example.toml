@@ -6,6 +6,10 @@ host = "threema.chat.sum7.eu"
 connection = "localhost:5347"
 secret = "change_me"
 
+[component.special]
+http_upload_url  = "https://example.org/upload/threema"
+http_upload_path = "/var/www/http/upload/threema"
+
 [database]
 type = "sqlite3"
 logging = false

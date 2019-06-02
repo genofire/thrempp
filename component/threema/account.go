@@ -12,6 +12,7 @@ import (
 
 type Account struct {
 	models.AccountThreema
+	threema      *Threema
 	Session      o3.SessionContext
 	send         chan<- o3.Message
 	receive      <-chan o3.ReceivedMsg
@@ -43,8 +44,11 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 	}
 	tid.Nick = o3.NewPubNick("xmpp:" + jid.String())
 
-	a := &Account{AccountThreema: account}
-	a.Session = o3.NewSessionContext(tid)
+	a := &Account{
+		AccountThreema: account,
+		Session:        o3.NewSessionContext(tid),
+		threema:        t,
+	}
 	a.send, a.receive, err = a.Session.Run()
 
 	if err != nil {

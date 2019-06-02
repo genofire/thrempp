@@ -13,7 +13,25 @@ import (
 func TestThreema(t *testing.T) {
 	assert := assert.New(t)
 
-	c, err := NewThreema(map[string]interface{}{})
+	// failed
+	c, err := NewThreema(map[string]interface{}{
+		"http_upload_path": 3,
+	})
+	assert.Error(err)
+	assert.Nil(c)
+
+	// failed
+	c, err = NewThreema(map[string]interface{}{
+		"http_upload_url": 3,
+	})
+	assert.Error(err)
+	assert.Nil(c)
+
+	// ---
+	c, err = NewThreema(map[string]interface{}{
+		"http_upload_url":  "",
+		"http_upload_path": "",
+	})
 	assert.NoError(err)
 	assert.NotNil(c)
 
@@ -73,6 +91,14 @@ func TestSend(t *testing.T) {
 
 	// test no answer
 	p = tr.send(xmpp.IQ{})
+	assert.Nil(p)
+
+	// chat with bot without sender
+	p = tr.send(xmpp.Message{
+		PacketAttrs: xmpp.PacketAttrs{
+			To: "example.org",
+		},
+	})
 	assert.Nil(p)
 
 	// chat with bot

@@ -44,6 +44,24 @@ func (a *Account) receiving(receivedMessage o3.ReceivedMsg) (xmpp.Packet, error)
 		requestExtensions(&xMSG)
 		return xMSG, nil
 
+	case o3.AudioMessage:
+		if a.threema.httpUploadPath == "" {
+			return nil, errors.New("no place to store files at transport configurated")
+		}
+		data, err := msg.GetAudioData(a.Session)
+		if err != nil {
+			log.Warnf("unable to read data from message: %s", err)
+			return nil, err
+		}
+		xMSG, err := a.FileToXMPP(msg.Sender().String(), msg.ID(), "mp3", data)
+		if err != nil {
+			log.Warnf("unable to create data from message: %s", err)
+			return nil, err
+		}
+		xMSG.Type = "chat"
+		requestExtensions(&xMSG)
+		return xMSG, nil
+
 	case o3.ImageMessage:
 		if a.threema.httpUploadPath == "" {
 			return nil, errors.New("no place to store files at transport configurated")

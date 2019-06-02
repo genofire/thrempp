@@ -69,6 +69,32 @@ func TestReceiveText(t *testing.T) {
 	assert.Equal("Oojoh0Ah", xMSG.Body)
 }
 
+func TestReceiveAudio(t *testing.T) {
+	assert := assert.New(t)
+
+	a := createDummyAccount()
+	a.threema = &Threema{}
+
+	/* receiving image
+	session := o3.SessionContext{
+		ID: o3.ThreemaID{
+			ID:   o3.NewIDString("12345678"),
+			Nick: o3.NewPubNick("user"),
+		},
+	}*/
+	dataMsg := o3.AudioMessage{}
+	_, err := a.receiving(o3.ReceivedMsg{
+		Msg: dataMsg,
+	})
+	assert.Error(err)
+
+	a.threema.httpUploadPath = "/tmp"
+	dataMsg = o3.AudioMessage{}
+	_, err = a.receiving(o3.ReceivedMsg{
+		Msg: dataMsg,
+	})
+	assert.Error(err)
+}
 func TestReceiveImage(t *testing.T) {
 	assert := assert.New(t)
 

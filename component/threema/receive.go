@@ -12,6 +12,13 @@ import (
 
 func (a *Account) receiver(out chan<- xmpp.Packet) {
 	for receivedMessage := range a.receive {
+		if receivedMessage.Err != nil {
+			log.Warnf("Error Receiving Message: %s\n", receivedMessage.Err)
+			xMSG := xmpp.NewMessage("chat", "", a.XMPP.String(), "", "en")
+			xMSG.Body = fmt.Sprintf("error on decoding message:\n%v", receivedMessage.Err)
+			out <- xMSG
+			continue
+		}
 		sender := receivedMessage.Msg.Sender().String()
 		if string(a.TID) == sender {
 			continue
@@ -32,10 +39,6 @@ func requestExtensions(xMSG *xmpp.Message) {
 }
 
 func (a *Account) receiving(receivedMessage o3.ReceivedMsg) (xmpp.Packet, error) {
-	if receivedMessage.Err != nil {
-		log.Warnf("Error Receiving Message: %s\n", receivedMessage.Err)
-		return nil, receivedMessage.Err
-	}
 	switch msg := receivedMessage.Msg.(type) {
 	case o3.TextMessage:
 		sender := msg.Sender().String()

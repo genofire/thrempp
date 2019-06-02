@@ -14,7 +14,7 @@ type Account struct {
 	models.AccountThreema
 	Session      o3.SessionContext
 	send         chan<- o3.Message
-	recieve      <-chan o3.ReceivedMsg
+	receive      <-chan o3.ReceivedMsg
 	deliveredMSG map[uint64]string
 	readedMSG    map[uint64]string
 }
@@ -45,7 +45,7 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 
 	a := &Account{AccountThreema: account}
 	a.Session = o3.NewSessionContext(tid)
-	a.send, a.recieve, err = a.Session.Run()
+	a.send, a.receive, err = a.Session.Run()
 
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 	a.deliveredMSG = make(map[uint64]string)
 	a.readedMSG = make(map[uint64]string)
 
-	go a.reciever(t.out)
+	go a.receiver(t.out)
 
 	t.accountJID[jid.String()] = a
 	return a, nil

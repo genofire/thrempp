@@ -12,7 +12,7 @@ func (c *Config) receiver() {
 			log.WithField("type", c.Type).Panicf("connection closed%s", err)
 			return
 		}
-		p, back := c.receive(packet)
+		p, back := c.receiving(packet)
 		if p == nil {
 			continue
 		}
@@ -24,7 +24,7 @@ func (c *Config) receiver() {
 	}
 }
 
-func (c *Config) receive(packet xmpp.Packet) (xmpp.Packet, bool) {
+func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 	logger := log.WithField("type", c.Type)
 
 	switch p := packet.(type) {

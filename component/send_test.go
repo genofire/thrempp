@@ -13,17 +13,17 @@ func TestSend(t *testing.T) {
 	c := Config{Host: "example.org"}
 
 	// ignoring packet
-	p := c.send(xmpp.IQ{})
+	p := c.sending(xmpp.IQ{})
 	assert.Nil(p)
 
 	// send by component host
-	p = c.send(xmpp.Message{})
+	p = c.sending(xmpp.Message{})
 	assert.NotNil(p)
 	msg := p.(xmpp.Message)
 	assert.Equal("example.org", msg.PacketAttrs.From)
 
 	// send by a user of component
-	p = c.send(xmpp.Message{PacketAttrs: xmpp.PacketAttrs{From: "threemaid"}})
+	p = c.sending(xmpp.Message{PacketAttrs: xmpp.PacketAttrs{From: "threemaid"}})
 	assert.NotNil(p)
 	msg = p.(xmpp.Message)
 	assert.Equal("threemaid@example.org", msg.PacketAttrs.From)

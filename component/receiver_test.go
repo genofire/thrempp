@@ -13,20 +13,20 @@ func TestReceive(t *testing.T) {
 	c := Config{Host: "example.org", Type: "monkeyservice"}
 
 	// ignoring packet
-	p, back := c.receive(xmpp.Handshake{})
+	p, _ := c.receiving(xmpp.Handshake{})
 	assert.Nil(p)
 
 	// receive presence
-	p, back = c.receive(xmpp.Presence{})
+	p, _ = c.receiving(xmpp.Presence{})
 	assert.Nil(p)
 
 	// message
-	p, back = c.receive(xmpp.Message{})
+	p, back := c.receiving(xmpp.Message{})
 	assert.False(back)
 	assert.NotNil(p)
 
 	// unsupported iq
-	p, back = c.receive(xmpp.IQ{Payload: []xmpp.IQPayload{
+	p, back = c.receiving(xmpp.IQ{Payload: []xmpp.IQPayload{
 		&xmpp.Err{},
 	}})
 	assert.True(back)
@@ -36,7 +36,7 @@ func TestReceive(t *testing.T) {
 	assert.Equal("feature-not-implemented", iq.Error.Reason)
 
 	// iq disco info
-	p, back = c.receive(xmpp.IQ{
+	p, back = c.receiving(xmpp.IQ{
 		PacketAttrs: xmpp.PacketAttrs{Type: "get"},
 		Payload: []xmpp.IQPayload{
 			&xmpp.DiscoInfo{},
@@ -50,7 +50,7 @@ func TestReceive(t *testing.T) {
 	assert.Equal("monkeyservice", dinfo.Identity.Name)
 
 	// iq disco items
-	p, back = c.receive(xmpp.IQ{
+	p, back = c.receiving(xmpp.IQ{
 		PacketAttrs: xmpp.PacketAttrs{Type: "get"},
 		Payload: []xmpp.IQPayload{
 			&xmpp.DiscoItems{},

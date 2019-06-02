@@ -8,14 +8,14 @@ import (
 	"gosrc.io/xmpp"
 )
 
-func (a *Account) reciever(out chan<- xmpp.Packet) {
-	for receivedMessage := range a.recieve {
-		if p := a.handle(receivedMessage); p != nil {
+func (a *Account) receiver(out chan<- xmpp.Packet) {
+	for receivedMessage := range a.receive {
+		if p := a.receiving(receivedMessage); p != nil {
 			out <- p
 		}
 	}
 }
-func (a *Account) handle(receivedMessage o3.ReceivedMsg) xmpp.Packet {
+func (a *Account) receiving(receivedMessage o3.ReceivedMsg) xmpp.Packet {
 	if receivedMessage.Err != nil {
 		log.Warnf("Error Receiving Message: %s\n", receivedMessage.Err)
 		return nil

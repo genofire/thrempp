@@ -28,28 +28,28 @@ func createDummyAccount() Account {
 	return a
 }
 
-func TestRecieve(t *testing.T) {
+func TestReceive(t *testing.T) {
 	assert := assert.New(t)
 
 	a := createDummyAccount()
 
-	// handle/skip error
-	p := a.handle(o3.ReceivedMsg{
+	// receiving/skip error
+	p := a.receiving(o3.ReceivedMsg{
 		Err: errors.New("dummy"),
 	})
 	assert.Nil(p)
 
-	// nothing to handle
-	p = a.handle(o3.ReceivedMsg{})
+	// nothing to receiving
+	p = a.receiving(o3.ReceivedMsg{})
 	assert.Nil(p)
 }
 
-func TestRecieveText(t *testing.T) {
+func TestReceiveText(t *testing.T) {
 	assert := assert.New(t)
 
 	a := createDummyAccount()
 
-	// handle text
+	// receiving text
 	session := o3.SessionContext{
 		ID: o3.ThreemaID{
 			ID:   o3.NewIDString("12345678"),
@@ -58,14 +58,14 @@ func TestRecieveText(t *testing.T) {
 	}
 	txtMsg, err := o3.NewTextMessage(&session, threemaID, "Oojoh0Ah")
 	assert.NoError(err)
-	p := a.handle(o3.ReceivedMsg{
+	p := a.receiving(o3.ReceivedMsg{
 		Msg: txtMsg,
 	})
 	xMSG, ok := p.(xmpp.Message)
 	assert.True(ok)
 	assert.Equal("Oojoh0Ah", xMSG.Body)
 
-	// handle/skip text to own id
+	// receiving/skip text to own id
 	session = o3.SessionContext{
 		ID: o3.ThreemaID{
 			ID:   threemaIDByte,
@@ -74,18 +74,18 @@ func TestRecieveText(t *testing.T) {
 	}
 	txtMsg, err = o3.NewTextMessage(&session, threemaID, "Aesh8shu")
 	assert.NoError(err)
-	p = a.handle(o3.ReceivedMsg{
+	p = a.receiving(o3.ReceivedMsg{
 		Msg: txtMsg,
 	})
 	assert.Nil(p)
 }
 
-func TestRecieveDeliveryReceipt(t *testing.T) {
+func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert := assert.New(t)
 
 	a := createDummyAccount()
 
-	// handle delivered
+	// receiving delivered
 	session := o3.SessionContext{
 		ID: o3.ThreemaID{
 			ID:   o3.NewIDString("12345678"),
@@ -98,7 +98,7 @@ func TestRecieveDeliveryReceipt(t *testing.T) {
 
 	drm, err := o3.NewDeliveryReceiptMessage(&session, threemaID, msgID, o3.MSGDELIVERED)
 	assert.NoError(err)
-	p := a.handle(o3.ReceivedMsg{
+	p := a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
 	xMSG, ok := p.(xmpp.Message)
@@ -106,16 +106,16 @@ func TestRecieveDeliveryReceipt(t *testing.T) {
 	rr := xMSG.Extensions[0].(xmpp.ReceiptReceived)
 	assert.Equal("im4aeseeh1IbaQui", rr.Id)
 
-	// handle delivered -> not in cache
-	p = a.handle(o3.ReceivedMsg{
+	// receiving delivered -> not in cache
+	p = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
 	assert.Nil(p)
 
-	// handle readed
+	// receiving readed
 	drm, err = o3.NewDeliveryReceiptMessage(&session, threemaID, msgID, o3.MSGREAD)
 	assert.NoError(err)
-	p = a.handle(o3.ReceivedMsg{
+	p = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
 	xMSG, ok = p.(xmpp.Message)
@@ -123,8 +123,8 @@ func TestRecieveDeliveryReceipt(t *testing.T) {
 	cmdd := xMSG.Extensions[0].(xmpp.ChatMarkerDisplayed)
 	assert.Equal("im4aeseeh1IbaQui", cmdd.Id)
 
-	// handle delivered -> not in cache
-	p = a.handle(o3.ReceivedMsg{
+	// receiving delivered -> not in cache
+	p = a.receiving(o3.ReceivedMsg{
 		Msg: drm,
 	})
 	assert.Nil(p)

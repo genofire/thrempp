@@ -55,7 +55,7 @@ func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 
 		if to.IsDomain() {
 			if from == nil {
-				log.Warn("recieve message without sender")
+				log.Warn("receive message without sender")
 				return nil
 			}
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
@@ -66,7 +66,7 @@ func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 		account, err := t.getAccount(from)
 		if err != nil {
 			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
-			msg.Body = "It was not possible to send, becouse we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
+			msg.Body = "It was not possible to send, because we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
 			return msg
 		}
 
@@ -77,7 +77,7 @@ func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
 			return msg
 		}
 	default:
-		log.Warnf("unkown package: %v", p)
+		log.Warnf("unknown package: %v", p)
 	}
 	return nil
 }

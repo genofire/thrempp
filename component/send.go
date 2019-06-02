@@ -7,13 +7,13 @@ import (
 
 func (c *Config) sender(packets chan xmpp.Packet) {
 	for packet := range packets {
-		if p := c.send(packet); p != nil {
+		if p := c.sending(packet); p != nil {
 			c.xmpp.Send(p)
 		}
 	}
 }
 
-func (c *Config) send(packet xmpp.Packet) xmpp.Packet {
+func (c *Config) sending(packet xmpp.Packet) xmpp.Packet {
 	logger := log.WithField("type", c.Type)
 	switch p := packet.(type) {
 	case xmpp.Message:

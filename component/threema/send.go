@@ -9,6 +9,17 @@ import (
 )
 
 func (a *Account) Send(to string, msg xmpp.Message) error {
+	m, err := a.sending(to, msg)
+	if err != nil {
+		return err
+	}
+	if m != nil {
+		a.send <- m
+	}
+	return nil
+}
+func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
+	// handle delivered / readed
 	msgID := ""
 	readed := false
 	for _, el := range msg.Extensions {
@@ -25,7 +36,7 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 	if msgID != "" {
 		id, err := strconv.ParseUint(msgID, 10, 64)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		msgType := o3.MSGDELIVERED
 		if readed {
@@ -33,23 +44,22 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 		}
 		drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, msgType)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		a.send <- drm
 		log.WithFields(map[string]interface{}{
 			"tid":    to,
 			"msg_id": id,
 			"type":   msgType,
 		}).Debug("update status of threema message")
-		return nil
+		return drm, nil
 	}
 
+	// send text message
 	msg3, err := o3.NewTextMessage(&a.Session, to, msg.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	a.deliveredMSG[msg3.ID()] = msg.Id
 	a.readedMSG[msg3.ID()] = msg.Id
-	a.send <- msg3
-	return nil
+	return msg3, nil
 }

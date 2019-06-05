@@ -24,13 +24,13 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 	readed := false
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
-		case *xmpp.ReceiptReceived:
-			msgID = ex.Id
-		case *xmpp.ChatMarkerReceived:
-			msgID = ex.Id
-		case *xmpp.ChatMarkerDisplayed:
+		case xmpp.ReceiptReceived:
+			msgID = ex.ID
+		case xmpp.MarkReceived:
+			msgID = ex.ID
+		case xmpp.MarkDisplayed:
 			readed = true
-			msgID = ex.Id
+			msgID = ex.ID
 		}
 	}
 	if msgID != "" {

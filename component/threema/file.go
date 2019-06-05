@@ -24,6 +24,6 @@ func (a *Account) FileToXMPP(from string, msgID uint64, ext string, data []byte)
 		return msg, err
 	}
 	msg.Body = url
-	msg.X = &xmpp.MsgXOOB{URL: url}
+	msg.Extensions = append(msg.Extensions, xmpp.OOB{URL: url})
 	return msg, nil
 }

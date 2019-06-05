@@ -51,10 +51,10 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 				payload := xmpp.DiscoInfo{
 					Identity: identity,
 					Features: []xmpp.Feature{
-						{Var: "http://jabber.org/protocol/disco#info"},
-						{Var: "http://jabber.org/protocol/disco#item"},
-						{Var: xmpp.NSSpaceXEP0184Receipt},
-						{Var: xmpp.NSSpaceXEP0333ChatMarkers},
+						{Var: xmpp.NSDiscoInfo},
+						{Var: xmpp.NSDiscoItems},
+						{Var: xmpp.NSMsgReceipts},
+						{Var: xmpp.NSMsgChatMarkers},
 					},
 				}
 				iq.AddPayload(&payload)

@@ -34,7 +34,7 @@ func TestAccountSend(t *testing.T) {
 	err := a.Send("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			&xmpp.ReceiptReceived{Id: "blub"},
+			xmpp.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
@@ -51,7 +51,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err := a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			&xmpp.ReceiptReceived{Id: "blub"},
+			xmpp.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
@@ -61,7 +61,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			&xmpp.ChatMarkerReceived{Id: "3"},
+			xmpp.MarkReceived{ID: "3"},
 		},
 	})
 	assert.NoError(err)
@@ -73,7 +73,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			&xmpp.ChatMarkerDisplayed{Id: "5"},
+			xmpp.MarkDisplayed{ID: "5"},
 		},
 	})
 	assert.NoError(err)

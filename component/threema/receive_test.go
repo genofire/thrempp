@@ -147,7 +147,7 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	xMSG, ok := p.(xmpp.Message)
 	assert.True(ok)
 	rr := xMSG.Extensions[0].(xmpp.ReceiptReceived)
-	assert.Equal("im4aeseeh1IbaQui", rr.Id)
+	assert.Equal("im4aeseeh1IbaQui", rr.ID)
 
 	// receiving delivered -> not in cache
 	p, err = a.receiving(o3.ReceivedMsg{
@@ -165,8 +165,8 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert.NoError(err)
 	xMSG, ok = p.(xmpp.Message)
 	assert.True(ok)
-	cmdd := xMSG.Extensions[0].(xmpp.ChatMarkerDisplayed)
-	assert.Equal("im4aeseeh1IbaQui", cmdd.Id)
+	cmdd := xMSG.Extensions[0].(xmpp.MarkDisplayed)
+	assert.Equal("im4aeseeh1IbaQui", cmdd.ID)
 
 	// receiving delivered -> not in cache
 	p, err = a.receiving(o3.ReceivedMsg{

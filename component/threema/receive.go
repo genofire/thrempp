@@ -35,7 +35,7 @@ func (a *Account) receiver(out chan<- xmpp.Packet) {
 
 func requestExtensions(xMSG *xmpp.Message) {
 	xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptRequest{})
-	xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerMarkable{})
+	xMSG.Extensions = append(xMSG.Extensions, xmpp.Markable{})
 }
 
 func (a *Account) receiving(receivedMessage o3.ReceivedMsg) (xmpp.Packet, error) {
@@ -89,8 +89,8 @@ func (a *Account) receiving(receivedMessage o3.ReceivedMsg) (xmpp.Packet, error)
 
 		if msg.Status() == o3.MSGDELIVERED {
 			if id, ok := a.deliveredMSG[msgID]; ok {
-				xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptReceived{Id: id})
-				xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerReceived{Id: id})
+				xMSG.Extensions = append(xMSG.Extensions, xmpp.ReceiptReceived{ID: id})
+				xMSG.Extensions = append(xMSG.Extensions, xmpp.MarkReceived{ID: id})
 				delete(a.deliveredMSG, msgID)
 			} else {
 				log.Warnf("found not id in cache to announce received on xmpp side")
@@ -98,7 +98,7 @@ func (a *Account) receiving(receivedMessage o3.ReceivedMsg) (xmpp.Packet, error)
 		}
 		if msg.Status() == o3.MSGREAD {
 			if id, ok := a.readedMSG[msgID]; ok {
-				xMSG.Extensions = append(xMSG.Extensions, xmpp.ChatMarkerDisplayed{Id: id})
+				xMSG.Extensions = append(xMSG.Extensions, xmpp.MarkDisplayed{ID: id})
 				delete(a.readedMSG, msgID)
 			} else {
 				log.Warnf("found not id in cache to announce readed on xmpp side")

@@ -3,6 +3,8 @@ package threema
 import (
 	"testing"
 
+	"gosrc.io/xmpp"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +19,8 @@ func TestFileToXMPP(t *testing.T) {
 
 	msg, err := a.FileToXMPP("", 1, "jpg", []byte("hallo"))
 	assert.NoError(err)
-	assert.Equal("a/1.jpg", msg.X.URL)
+	oob := msg.Extensions[0].(xmpp.OOB)
+	assert.Equal("a/1.jpg", oob.URL)
 
 	a.threema.httpUploadPath = "/gibt/es/nicht"
 	msg, err = a.FileToXMPP("", 1, "jpg", []byte("hallo"))

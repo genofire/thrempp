@@ -3,7 +3,7 @@
 [![coverage report](https://dev.sum7.eu/genofire/thrempp/badges/master/coverage.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
 [![Go Report Card](https://goreportcard.com/badge/dev.sum7.eu/genofire/thrempp)](https://goreportcard.com/report/dev.sum7.eu/genofire/thrempp)
 [![GoDoc](https://godoc.org/dev.sum7.eu/genofire/thrempp?status.svg)](https://godoc.org/dev.sum7.eu/genofire/thrempp)
-
+ [![](https://inverse.chat/badge.svg?room=thrempp@conference.chat.sum7.eu)](https://conversations.im/j/thrempp@conference.chat.sum7.eu)
 
 XMPP - Transport
 

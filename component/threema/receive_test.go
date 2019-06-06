@@ -150,3 +150,25 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert.NoError(err)
 	assert.Nil(p)
 }
+func TestReceiveTyping(t *testing.T) {
+	assert := assert.New(t)
+
+	a := createDummyAccount()
+
+	// receiving inactive
+	tnm := o3.TypingNotificationMessage{}
+	p, err := a.receiving(tnm)
+	assert.NoError(err)
+	xMSG, ok := p.(xmpp.Message)
+	assert.True(ok)
+	assert.IsType(xmpp.StateInactive{}, xMSG.Extensions[0])
+
+	// receiving composing
+	tnm = o3.TypingNotificationMessage{}
+	tnm.OnOff = 0x1
+	p, err = a.receiving(tnm)
+	assert.NoError(err)
+	xMSG, ok = p.(xmpp.Message)
+	assert.True(ok)
+	assert.IsType(xmpp.StateComposing{}, xMSG.Extensions[0])
+}

@@ -55,6 +55,7 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 						{Var: xmpp.NSDiscoItems},
 						{Var: xmpp.NSMsgReceipts},
 						{Var: xmpp.NSMsgChatMarkers},
+						{Var: xmpp.NSMsgChatStateNotifications},
 					},
 				}
 				iq.AddPayload(&payload)
@@ -90,12 +91,13 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 		}
 
 	case xmpp.Message:
-		logger.WithFields(map[string]interface{}{
-			"from": p.PacketAttrs.From,
-			"to":   p.PacketAttrs.To,
-			"id":   p.PacketAttrs.Id,
-		}).Debug(p.XMPPFormat())
-
+		if c.XMPPLog {
+			logger.WithFields(map[string]interface{}{
+				"from": p.PacketAttrs.From,
+				"to":   p.PacketAttrs.To,
+				"id":   p.PacketAttrs.Id,
+			}).Debug(p.XMPPFormat())
+		}
 		return packet, false
 
 	case xmpp.Presence:

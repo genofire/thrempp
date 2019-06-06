@@ -5,6 +5,7 @@ type = "threema"
 host = "threema.chat.sum7.eu"
 connection = "localhost:5347"
 secret = "change_me"
+xmpp_log = false
 
 [component.special]
 http_upload_url  = "https://example.org/upload/threema"

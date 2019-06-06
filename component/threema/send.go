@@ -22,8 +22,19 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 	// handle delivered / readed
 	msgID := ""
 	readed := false
+	composing := false
+	state := false
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
+		case xmpp.StateComposing:
+			composing = true
+			state = true
+		case xmpp.StateInactive:
+			state = true
+		case xmpp.StateActive:
+			state = true
+		case xmpp.StateGone:
+			state = true
 		case xmpp.ReceiptReceived:
 			msgID = ex.ID
 		case xmpp.MarkReceived:
@@ -32,6 +43,12 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 			readed = true
 			msgID = ex.ID
 		}
+	}
+	if composing {
+		return nil, nil
+	}
+	if state && msg.Body == "" {
+		return nil, nil
 	}
 	if msgID != "" {
 		id, err := strconv.ParseUint(msgID, 10, 64)

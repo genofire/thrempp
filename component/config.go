@@ -9,6 +9,7 @@ type Config struct {
 	Host       string
 	Connection string
 	Secret     string
+	XMPPLog    bool `toml:"xmpp_log"`
 	Special    map[string]interface{}
 
 	xmpp *xmpp.Component

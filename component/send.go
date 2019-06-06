@@ -22,11 +22,13 @@ func (c *Config) sending(packet xmpp.Packet) xmpp.Packet {
 		} else {
 			p.PacketAttrs.From += "@" + c.Host
 		}
-		logger.WithFields(map[string]interface{}{
-			"from": p.PacketAttrs.From,
-			"to":   p.PacketAttrs.To,
-			"id":   p.PacketAttrs.Id,
-		}).Debug(p.XMPPFormat())
+		if c.XMPPLog {
+			logger.WithFields(map[string]interface{}{
+				"from": p.PacketAttrs.From,
+				"to":   p.PacketAttrs.To,
+				"id":   p.PacketAttrs.Id,
+			}).Debug(p.XMPPFormat())
+		}
 		return p
 	default:
 		log.Warn("ignoring packet:", packet)

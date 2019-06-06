@@ -19,56 +19,60 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 	return nil
 }
 func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
-	// handle delivered / readed
-	msgID := ""
-	readed := false
-	composing := false
-	state := false
+	chatState := false
+	chatStateComposing := false
+	msgStateID := ""
+	msgStateRead := false
+
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
-		case xmpp.StateComposing:
-			composing = true
-			state = true
-		case xmpp.StateInactive:
-			state = true
 		case xmpp.StateActive:
-			state = true
+			chatState = true
+		case xmpp.StateComposing:
+			chatState = true
+			chatStateComposing = true
 		case xmpp.StateGone:
-			state = true
+			chatState = true
+		case xmpp.StateInactive:
+			chatState = true
+		case xmpp.StatePaused:
+			chatState = true
 		case xmpp.ReceiptReceived:
-			msgID = ex.ID
+			msgStateID = ex.ID
 		case xmpp.MarkReceived:
-			msgID = ex.ID
+			msgStateID = ex.ID
 		case xmpp.MarkDisplayed:
-			readed = true
-			msgID = ex.ID
+			msgStateRead = true
+			msgStateID = ex.ID
 		}
 	}
-	if composing {
-		return nil, nil
-	}
-	if state && msg.Body == "" {
-		return nil, nil
-	}
-	if msgID != "" {
-		id, err := strconv.ParseUint(msgID, 10, 64)
-		if err != nil {
-			return nil, err
+	if msg.Body == "" {
+		if msgStateID != "" {
+			id, err := strconv.ParseUint(msgStateID, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			msgType := o3.MSGDELIVERED
+			if msgStateRead {
+				msgType = o3.MSGREAD
+			}
+			drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, msgType)
+			if err != nil {
+				return nil, err
+			}
+			log.WithFields(map[string]interface{}{
+				"tid":    to,
+				"msg_id": id,
+				"type":   msgType,
+			}).Debug("update status of threema message")
+			return drm, nil
 		}
-		msgType := o3.MSGDELIVERED
-		if readed {
-			msgType = o3.MSGREAD
+		if chatStateComposing {
+			return nil, nil
 		}
-		drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, msgType)
-		if err != nil {
-			return nil, err
+		if chatState {
+			return nil, nil
 		}
-		log.WithFields(map[string]interface{}{
-			"tid":    to,
-			"msg_id": id,
-			"type":   msgType,
-		}).Debug("update status of threema message")
-		return drm, nil
 	}
 
 	// send text message

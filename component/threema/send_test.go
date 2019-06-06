@@ -81,3 +81,52 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	assert.True(ok)
 	assert.Equal(o3.MSGREAD, drm.Status())
 }
+func TestSendTyping(t *testing.T) {
+	assert := assert.New(t)
+
+	a := Account{
+		Session:      o3.NewSessionContext(o3.ThreemaID{ID: o3.NewIDString("43218765")}),
+		deliveredMSG: make(map[uint64]string),
+		readedMSG:    make(map[uint64]string),
+	}
+
+	// skip typing messae
+	msg, err := a.sending("a", xmpp.Message{
+		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
+		Extensions: []xmpp.MsgExtension{
+			xmpp.StateComposing{},
+		},
+	})
+	assert.NoError(err)
+	assert.Nil(msg)
+
+	// skip gone
+	msg, err = a.sending("a", xmpp.Message{
+		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
+		Extensions: []xmpp.MsgExtension{
+			xmpp.StateActive{},
+			xmpp.StateGone{},
+			xmpp.StateInactive{},
+			xmpp.StatePaused{},
+		},
+	})
+	assert.NoError(err)
+	assert.Nil(msg)
+
+	// skip gone
+	msg, err = a.sending("a", xmpp.Message{
+		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
+		Extensions: []xmpp.MsgExtension{
+			xmpp.StateActive{},
+			xmpp.StateComposing{},
+			xmpp.StateGone{},
+			xmpp.StateInactive{},
+			xmpp.StatePaused{},
+		},
+		Body: "hi",
+	})
+	assert.NoError(err)
+	assert.NotNil(msg)
+	o3msg := msg.(o3.TextMessage)
+	assert.Contains(o3msg.Text(), "hi")
+}

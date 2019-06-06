@@ -10,7 +10,7 @@ import (
 func TestReceive(t *testing.T) {
 	assert := assert.New(t)
 
-	c := Config{Host: "example.org", Type: "monkeyservice"}
+	c := Config{Host: "example.org", Type: "monkeyservice", XMPPDebug: true}
 
 	// ignoring packet
 	p, _ := c.receiving(xmpp.Handshake{})

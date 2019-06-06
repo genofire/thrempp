@@ -22,7 +22,7 @@ func (c *Config) sending(packet xmpp.Packet) xmpp.Packet {
 		} else {
 			p.PacketAttrs.From += "@" + c.Host
 		}
-		if c.XMPPLog {
+		if c.XMPPDebug {
 			logger.WithFields(map[string]interface{}{
 				"from": p.PacketAttrs.From,
 				"to":   p.PacketAttrs.To,

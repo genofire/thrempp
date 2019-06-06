@@ -91,7 +91,7 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 		}
 
 	case xmpp.Message:
-		if c.XMPPLog {
+		if c.XMPPDebug {
 			logger.WithFields(map[string]interface{}{
 				"from": p.PacketAttrs.From,
 				"to":   p.PacketAttrs.To,

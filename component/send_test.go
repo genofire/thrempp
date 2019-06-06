@@ -10,7 +10,7 @@ import (
 func TestSend(t *testing.T) {
 	assert := assert.New(t)
 
-	c := Config{Host: "example.org"}
+	c := Config{Host: "example.org", XMPPDebug: true}
 
 	// ignoring packet
 	p := c.sending(xmpp.IQ{})

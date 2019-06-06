@@ -34,7 +34,7 @@ func TestAccountSend(t *testing.T) {
 	err := a.Send("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.ReceiptReceived{ID: "blub"},
+			&xmpp.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
@@ -51,7 +51,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err := a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.ReceiptReceived{ID: "blub"},
+			&xmpp.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
@@ -61,7 +61,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.MarkReceived{ID: "3"},
+			&xmpp.MarkReceived{ID: "3"},
 		},
 	})
 	assert.NoError(err)
@@ -73,7 +73,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.MarkDisplayed{ID: "5"},
+			&xmpp.MarkDisplayed{ID: "5"},
 		},
 	})
 	assert.NoError(err)
@@ -94,7 +94,7 @@ func TestSendTyping(t *testing.T) {
 	msg, err := a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.StateComposing{},
+			&xmpp.StateComposing{},
 		},
 	})
 	assert.NoError(err)
@@ -104,10 +104,10 @@ func TestSendTyping(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.StateActive{},
-			xmpp.StateGone{},
-			xmpp.StateInactive{},
-			xmpp.StatePaused{},
+			&xmpp.StateActive{},
+			&xmpp.StateGone{},
+			&xmpp.StateInactive{},
+			&xmpp.StatePaused{},
 		},
 	})
 	assert.NoError(err)
@@ -117,11 +117,11 @@ func TestSendTyping(t *testing.T) {
 	msg, err = a.sending("a", xmpp.Message{
 		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
 		Extensions: []xmpp.MsgExtension{
-			xmpp.StateActive{},
-			xmpp.StateComposing{},
-			xmpp.StateGone{},
-			xmpp.StateInactive{},
-			xmpp.StatePaused{},
+			&xmpp.StateActive{},
+			&xmpp.StateComposing{},
+			&xmpp.StateGone{},
+			&xmpp.StateInactive{},
+			&xmpp.StatePaused{},
 		},
 		Body: "hi",
 	})

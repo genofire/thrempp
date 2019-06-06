@@ -19,29 +19,38 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 	return nil
 }
 func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
+	logger := log.WithFields(map[string]interface{}{
+		"from": a.XMPP.String(),
+		"to":   to,
+	})
+
 	chatState := false
 	chatStateComposing := false
+
 	msgStateID := ""
 	msgStateRead := false
 
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
-		case xmpp.StateActive:
+
+		case *xmpp.StateActive:
 			chatState = true
-		case xmpp.StateComposing:
+		case *xmpp.StateComposing:
 			chatState = true
 			chatStateComposing = true
-		case xmpp.StateGone:
+		case *xmpp.StateGone:
 			chatState = true
-		case xmpp.StateInactive:
+		case *xmpp.StateInactive:
 			chatState = true
-		case xmpp.StatePaused:
+		case *xmpp.StatePaused:
 			chatState = true
-		case xmpp.ReceiptReceived:
+
+		case *xmpp.ReceiptReceived:
 			msgStateID = ex.ID
-		case xmpp.MarkReceived:
+		case *xmpp.MarkReceived:
 			msgStateID = ex.ID
-		case xmpp.MarkDisplayed:
+
+		case *xmpp.MarkDisplayed:
 			msgStateRead = true
 			msgStateID = ex.ID
 		}
@@ -60,18 +69,22 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 			if err != nil {
 				return nil, err
 			}
-			log.WithFields(map[string]interface{}{
-				"tid":    to,
+			logger.WithFields(map[string]interface{}{
 				"msg_id": id,
 				"type":   msgType,
 			}).Debug("update status of threema message")
 			return drm, nil
 		}
-		if chatStateComposing {
-			return nil, nil
-		}
+
 		if chatState {
-			return nil, nil
+			tnm := o3.TypingNotificationMessage{}
+			if chatStateComposing {
+				tnm.OnOff = 0x1
+			}
+			logger.WithFields(map[string]interface{}{
+				"state": chatStateComposing,
+			}).Debug("send typing")
+			return tnm, nil
 		}
 	}
 
@@ -82,5 +95,10 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 	}
 	a.deliveredMSG[msg3.ID()] = msg.Id
 	a.readedMSG[msg3.ID()] = msg.Id
+	logger.WithFields(map[string]interface{}{
+		"x_id": msg.Id,
+		"t_id": msg3.ID(),
+		"text": msg.Body,
+	}).Debug("send text")
 	return msg3, nil
 }

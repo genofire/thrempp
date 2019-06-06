@@ -75,7 +75,6 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 			}).Debug("update status of threema message")
 			return drm, nil
 		}
-
 		if chatState {
 			tnm := o3.TypingNotificationMessage{}
 			if chatStateComposing {
@@ -83,8 +82,8 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 			}
 			logger.WithFields(map[string]interface{}{
 				"state": chatStateComposing,
-			}).Debug("send typing")
-			return tnm, nil
+			}).Debug("not send typing")
+			return nil, nil
 		}
 	}
 

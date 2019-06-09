@@ -6,12 +6,7 @@ import (
 )
 
 func (c *Config) receiver() {
-	for {
-		packet, err := c.xmpp.ReadPacket()
-		if err != nil {
-			log.WithField("type", c.Type).Panicf("connection closed%s", err)
-			return
-		}
+	for packet := range c.xmpp.Recv() {
 		p, back := c.receiving(packet)
 		if p == nil {
 			continue
@@ -24,7 +19,7 @@ func (c *Config) receiver() {
 	}
 }
 
-func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
+func (c *Config) receiving(packet interface{}) (xmpp.Packet, bool) {
 	logger := log.WithField("type", c.Type)
 
 	switch p := packet.(type) {
@@ -62,6 +57,7 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 				loggerIQ.Debug("disco info")
 				return iq, true
 			}
+
 		case *xmpp.DiscoItems:
 			if p.Type == "get" {
 				iq := xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
@@ -98,7 +94,7 @@ func (c *Config) receiving(packet xmpp.Packet) (xmpp.Packet, bool) {
 				"id":   p.PacketAttrs.Id,
 			}).Debug(p.XMPPFormat())
 		}
-		return packet, false
+		return p, false
 
 	case xmpp.Presence:
 		logger.Debug("received presence:", p.Type)

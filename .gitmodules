@@ -1,4 +1,0 @@
-[submodule "vendor/gosrc.io/xmpp"]
-	path = vendor/gosrc.io/xmpp
-	url = https://github.com/genofire/go-xmpp
-	branch = all

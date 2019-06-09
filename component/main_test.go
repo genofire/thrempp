@@ -22,11 +22,6 @@ func TestLoad(t *testing.T) {
 	AddComponent("error", func(config map[string]interface{}) (Component, error) {
 		return nil, errors.New("dummy")
 	})
-	// load correct
-	Load([]Config{
-		{},
-	})
-
 	// error on component
 	assert.Panics(func() {
 		Load([]Config{

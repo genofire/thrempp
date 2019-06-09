@@ -16,15 +16,26 @@ type Config struct {
 	comp Component
 }
 
-func (c *Config) Start() error {
-	c.xmpp = &xmpp.Component{Host: c.Host, Secret: c.Secret}
-	err := c.xmpp.Connect(c.Connection)
-	if err != nil {
-		return err
-	}
+func (c *Config) Start() (err error) {
 	out, err := c.comp.Connect()
 	if err != nil {
-		return err
+		return
+	}
+	c.xmpp, err = xmpp.NewComponent(xmpp.ComponentOptions{
+		Domain:   c.Host,
+		Secret:   c.Secret,
+		Address:  c.Connection,
+		Name:     c.Type,
+		Category: "gateway",
+		Type:     "service",
+	})
+	if err != nil {
+		return
+	}
+	cm := xmpp.NewStreamManager(c.xmpp, nil)
+	err = cm.Start()
+	if err != nil {
+		return
 	}
 
 	go c.sender(out)

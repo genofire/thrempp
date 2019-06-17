@@ -7,14 +7,15 @@ variables:
         GIT_SUBMODULE_STRATEGY: recursive
 
 before_script:
-  - mkdir -p /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE/
-  - cp -R $CI_PROJECT_DIR /go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE
-  - cd /go/src/dev.sum7.eu/$CI_PROJECT_PATH
-  - go get -v dev.sum7.eu/$CI_PROJECT_PATH
+  - mkdir -p "/go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE/"
+  - cp -R "$CI_PROJECT_DIR" "/go/src/dev.sum7.eu/$CI_PROJECT_NAMESPACE/"
+  - cd "/go/src/dev.sum7.eu/$CI_PROJECT_PATH"
+  - go get -d -t ./...
 
 build-my-project:
   stage: build
   script:
+    - go install "dev.sum7.eu/$CI_PROJECT_PATH"
     - mkdir $CI_PROJECT_DIR/bin/
     - cp /go/bin/$CI_PROJECT_NAME $CI_PROJECT_DIR/bin/$CI_PROJECT_NAME
   artifacts:
@@ -25,14 +26,17 @@ build-my-project:
 test-my-project:
   stage: test
   script:
+    - go get github.com/client9/misspell/cmd/misspell
+    - misspell -error .
     - ./.ci/check-gofmt
     - ./.ci/check-testfiles
-    - go get -d github.com/stretchr/testify/assert
     - go test $(go list ./... | grep -v /vendor/) -v -coverprofile .testCoverage.txt
     - go tool cover -func=.testCoverage.txt
+  artifacts:
+    paths:
+     - .testCoverage.txt
 
 test-race-my-project:
   stage: test
   script:
-    - go get -d github.com/stretchr/testify/assert
     - go test -race ./...

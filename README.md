@@ -27,7 +27,7 @@ go get -u dev.sum7.eu/genofire/thrempp
 
 ## Configure
 
-see `config_example.conf`
+see `config_example.toml`
 
 ## Start / Boot
 

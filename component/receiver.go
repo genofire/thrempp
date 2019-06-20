@@ -1,106 +1,112 @@
 package component
 
 import (
+	"encoding/xml"
+
 	"github.com/bdlm/log"
 	"gosrc.io/xmpp"
 )
 
-func (c *Config) receiver() {
-	for packet := range c.xmpp.Recv() {
-		p, back := c.receiving(packet)
-		if p == nil {
-			continue
-		}
-		if back {
-			c.xmpp.Send(p)
-		} else {
-			c.comp.Send(p)
+func (c *Config) handleDiscoInfo(s xmpp.Sender, p xmpp.Packet) {
+	iq, ok := p.(xmpp.IQ)
+	if !ok || iq.Type != "get" {
+		return
+	}
+	discoInfo, ok := iq.Payload.(*xmpp.DiscoInfo)
+	if !ok {
+		return
+	}
+	attrs := iq.PacketAttrs
+	iq = xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
+
+	payload := xmpp.DiscoInfo{
+		XMLName: xml.Name{
+			Space: xmpp.NSDiscoInfo,
+			Local: "query",
+		},
+		Features: []xmpp.Feature{
+			{Var: xmpp.NSDiscoInfo},
+			{Var: xmpp.NSDiscoItems},
+			{Var: xmpp.NSMsgReceipts},
+			{Var: xmpp.NSMsgChatMarkers},
+			{Var: xmpp.NSMsgChatStateNotifications},
+		},
+	}
+	if discoInfo.Node == "" {
+		payload.Identity = xmpp.Identity{
+			Name:     c.Type,
+			Category: "gateway",
+			Type:     "service",
 		}
 	}
+	iq.Payload = &payload
+	log.WithFields(map[string]interface{}{
+		"type": c.Type,
+		"from": s,
+		"to":   attrs.To,
+	}).Debug("disco info")
+	s.Send(iq)
 }
 
-func (c *Config) receiving(packet interface{}) (xmpp.Packet, bool) {
-	logger := log.WithField("type", c.Type)
-
-	switch p := packet.(type) {
-	case xmpp.IQ:
-		attrs := p.PacketAttrs
-		loggerIQ := logger.WithFields(map[string]interface{}{
-			"from": attrs.From,
-			"to":   attrs.To,
-		})
-
-		switch inner := p.Payload[0].(type) {
-		case *xmpp.DiscoInfo:
-			if p.Type == "get" {
-				iq := xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
-				var identity xmpp.Identity
-				if inner.Node == "" {
-					identity = xmpp.Identity{
-						Name:     c.Type,
-						Category: "gateway",
-						Type:     "service",
-					}
-				}
-
-				payload := xmpp.DiscoInfo{
-					Identity: identity,
-					Features: []xmpp.Feature{
-						{Var: xmpp.NSDiscoInfo},
-						{Var: xmpp.NSDiscoItems},
-						{Var: xmpp.NSMsgReceipts},
-						{Var: xmpp.NSMsgChatMarkers},
-						{Var: xmpp.NSMsgChatStateNotifications},
-					},
-				}
-				iq.AddPayload(&payload)
-				loggerIQ.Debug("disco info")
-				return iq, true
-			}
-
-		case *xmpp.DiscoItems:
-			if p.Type == "get" {
-				iq := xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
-
-				var payload xmpp.DiscoItems
-				if inner.Node == "" {
-					payload = xmpp.DiscoItems{
-						Items: []xmpp.DiscoItem{
-							{Name: c.Type, JID: c.Host, Node: "node1"},
-						},
-					}
-				}
-				iq.AddPayload(&payload)
-				loggerIQ.Debug("disco items")
-				return iq, true
-			}
-		default:
-			logger.Debug("ignoring iq packet", inner)
-			xError := xmpp.Err{
-				Code:   501,
-				Reason: "feature-not-implemented",
-				Type:   "cancel",
-			}
-			reply := p.MakeError(xError)
-
-			return reply, true
-		}
-
-	case xmpp.Message:
-		if c.XMPPDebug {
-			logger.WithFields(map[string]interface{}{
-				"from": p.PacketAttrs.From,
-				"to":   p.PacketAttrs.To,
-				"id":   p.PacketAttrs.Id,
-			}).Debug(p.XMPPFormat())
-		}
-		return p, false
-
-	case xmpp.Presence:
-		logger.Debug("received presence:", p.Type)
-
-	default:
-		logger.Debug("ignoring packet:", packet)
+func (c *Config) handleDiscoItems(s xmpp.Sender, p xmpp.Packet) {
+	iq, ok := p.(xmpp.IQ)
+	if !ok || iq.Type != "get" {
+		return
 	}
-	return nil, false
+	discoItems, ok := iq.Payload.(*xmpp.DiscoItems)
+	if !ok {
+		return
+	}
+	attrs := iq.PacketAttrs
+	iq = xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
+
+	payload := xmpp.DiscoItems{}
+	if discoItems.Node == "" {
+		payload.Items = []xmpp.DiscoItem{
+			{Name: c.Type, JID: c.Host, Node: "node1"},
+		}
+	}
+	iq.Payload = &payload
+
+	log.WithFields(map[string]interface{}{
+		"type": c.Type,
+		"from": s,
+		"to":   attrs.To,
+	}).Debug("disco items")
+	s.Send(iq)
+}
+func (c *Config) handleIQ(s xmpp.Sender, p xmpp.Packet) {
+	iq, ok := p.(xmpp.IQ)
+	if !ok || iq.Type != "get" {
+		return
+	}
+	xError := xmpp.Err{
+		Code:   501,
+		Reason: "feature-not-implemented",
+		Type:   "cancel",
+	}
+	resp := iq.MakeError(xError)
+	attrs := iq.PacketAttrs
+
+	log.WithFields(map[string]interface{}{
+		"type": c.Type,
+		"from": s,
+		"to":   attrs.To,
+	}).Debugf("ignore: %s", iq.Payload)
+	s.Send(resp)
+}
+func (c *Config) handleMessage(s xmpp.Sender, p xmpp.Packet) {
+	msg, ok := p.(xmpp.Message)
+	if !ok {
+		return
+	}
+	if c.XMPPDebug {
+		log.WithFields(map[string]interface{}{
+			"type": c.Type,
+			"from": s,
+			"to":   msg.PacketAttrs.To,
+			"id":   msg.PacketAttrs.Id,
+		}).Debug(msg.XMPPFormat())
+	}
+	c.comp.Send(p)
 }

@@ -21,6 +21,13 @@ func (c *Config) Start() (err error) {
 	if err != nil {
 		return
 	}
+
+	router := xmpp.NewRouter()
+	router.NewRoute().IQNamespaces(xmpp.NSDiscoInfo).HandlerFunc(c.handleDiscoInfo)
+	router.NewRoute().IQNamespaces(xmpp.NSDiscoItems).HandlerFunc(c.handleDiscoItems)
+	router.HandleFunc("iq", c.handleIQ)
+	router.HandleFunc("message", c.handleMessage)
+
 	c.xmpp, err = xmpp.NewComponent(xmpp.ComponentOptions{
 		Domain:   c.Host,
 		Secret:   c.Secret,
@@ -28,18 +35,13 @@ func (c *Config) Start() (err error) {
 		Name:     c.Type,
 		Category: "gateway",
 		Type:     "service",
-	})
+	}, router)
 	if err != nil {
 		return
 	}
 	cm := xmpp.NewStreamManager(c.xmpp, nil)
-	err = cm.Start()
-	if err != nil {
-		return
-	}
-
+	go cm.Run()
 	go c.sender(out)
-	go c.receiver()
 
 	return nil
 }

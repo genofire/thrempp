@@ -2,12 +2,12 @@ package component
 
 import (
 	"github.com/bdlm/log"
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
 type Component interface {
-	Connect() (chan xmpp.Packet, error)
-	Send(xmpp.Packet)
+	Connect() (chan stanza.Packet, error)
+	Send(stanza.Packet)
 }
 
 // Connect function with config to get DB connection interface

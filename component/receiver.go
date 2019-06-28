@@ -5,39 +5,40 @@ import (
 
 	"github.com/bdlm/log"
 	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
-func (c *Config) handleDiscoInfo(s xmpp.Sender, p xmpp.Packet) {
-	iq, ok := p.(xmpp.IQ)
+func (c *Config) handleDiscoInfo(s xmpp.Sender, p stanza.Packet) {
+	iq, ok := p.(stanza.IQ)
 	if !ok || iq.Type != "get" {
 		return
 	}
-	discoInfo, ok := iq.Payload.(*xmpp.DiscoInfo)
+	discoInfo, ok := iq.Payload.(*stanza.DiscoInfo)
 	if !ok {
 		return
 	}
-	attrs := iq.PacketAttrs
-	iq = xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
+	attrs := iq.Attrs
+	iq = stanza.NewIQ(stanza.Attrs{Type: stanza.IQTypeResult, To: attrs.From, From: attrs.To, Id: attrs.Id})
 
-	payload := xmpp.DiscoInfo{
+	payload := stanza.DiscoInfo{
 		XMLName: xml.Name{
-			Space: xmpp.NSDiscoInfo,
+			Space: stanza.NSDiscoInfo,
 			Local: "query",
 		},
-		Features: []xmpp.Feature{
-			{Var: xmpp.NSDiscoInfo},
-			{Var: xmpp.NSDiscoItems},
-			{Var: xmpp.NSMsgReceipts},
-			{Var: xmpp.NSMsgChatMarkers},
-			{Var: xmpp.NSMsgChatStateNotifications},
+		Features: []stanza.Feature{
+			{Var: stanza.NSDiscoInfo},
+			{Var: stanza.NSDiscoItems},
+			{Var: stanza.NSMsgReceipts},
+			{Var: stanza.NSMsgChatMarkers},
+			{Var: stanza.NSMsgChatStateNotifications},
 		},
 	}
 	if discoInfo.Node == "" {
-		payload.Identity = xmpp.Identity{
+		payload.Identity = append(payload.Identity, stanza.Identity{
 			Name:     c.Type,
 			Category: "gateway",
 			Type:     "service",
-		}
+		})
 	}
 	iq.Payload = &payload
 	log.WithFields(map[string]interface{}{
@@ -48,21 +49,21 @@ func (c *Config) handleDiscoInfo(s xmpp.Sender, p xmpp.Packet) {
 	s.Send(iq)
 }
 
-func (c *Config) handleDiscoItems(s xmpp.Sender, p xmpp.Packet) {
-	iq, ok := p.(xmpp.IQ)
+func (c *Config) handleDiscoItems(s xmpp.Sender, p stanza.Packet) {
+	iq, ok := p.(stanza.IQ)
 	if !ok || iq.Type != "get" {
 		return
 	}
-	discoItems, ok := iq.Payload.(*xmpp.DiscoItems)
+	discoItems, ok := iq.Payload.(*stanza.DiscoItems)
 	if !ok {
 		return
 	}
-	attrs := iq.PacketAttrs
-	iq = xmpp.NewIQ("result", attrs.To, attrs.From, attrs.Id, "en")
+	attrs := iq.Attrs
+	iq = stanza.NewIQ(stanza.Attrs{Type: stanza.IQTypeResult, To: attrs.From, From: attrs.To, Id: attrs.Id})
 
-	payload := xmpp.DiscoItems{}
+	payload := stanza.DiscoItems{}
 	if discoItems.Node == "" {
-		payload.Items = []xmpp.DiscoItem{
+		payload.Items = []stanza.DiscoItem{
 			{Name: c.Type, JID: c.Host, Node: "node1"},
 		}
 	}
@@ -75,18 +76,18 @@ func (c *Config) handleDiscoItems(s xmpp.Sender, p xmpp.Packet) {
 	}).Debug("disco items")
 	s.Send(iq)
 }
-func (c *Config) handleIQ(s xmpp.Sender, p xmpp.Packet) {
-	iq, ok := p.(xmpp.IQ)
+func (c *Config) handleIQ(s xmpp.Sender, p stanza.Packet) {
+	iq, ok := p.(stanza.IQ)
 	if !ok || iq.Type != "get" {
 		return
 	}
-	xError := xmpp.Err{
+	xError := stanza.Err{
 		Code:   501,
 		Reason: "feature-not-implemented",
 		Type:   "cancel",
 	}
 	resp := iq.MakeError(xError)
-	attrs := iq.PacketAttrs
+	attrs := iq.Attrs
 
 	log.WithFields(map[string]interface{}{
 		"type": c.Type,
@@ -95,8 +96,8 @@ func (c *Config) handleIQ(s xmpp.Sender, p xmpp.Packet) {
 	}).Debugf("ignore: %s", iq.Payload)
 	s.Send(resp)
 }
-func (c *Config) handleMessage(s xmpp.Sender, p xmpp.Packet) {
-	msg, ok := p.(xmpp.Message)
+func (c *Config) handleMessage(s xmpp.Sender, p stanza.Packet) {
+	msg, ok := p.(stanza.Message)
 	if !ok {
 		return
 	}
@@ -104,8 +105,8 @@ func (c *Config) handleMessage(s xmpp.Sender, p xmpp.Packet) {
 		log.WithFields(map[string]interface{}{
 			"type": c.Type,
 			"from": s,
-			"to":   msg.PacketAttrs.To,
-			"id":   msg.PacketAttrs.Id,
+			"to":   msg.To,
+			"id":   msg.Id,
 		}).Debug(msg.XMPPFormat())
 	}
 	c.comp.Send(p)

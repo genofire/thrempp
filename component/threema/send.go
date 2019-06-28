@@ -5,10 +5,10 @@ import (
 
 	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
-func (a *Account) Send(to string, msg xmpp.Message) error {
+func (a *Account) Send(to string, msg stanza.Message) error {
 	m, err := a.sending(to, msg)
 	if err != nil {
 		return err
@@ -18,7 +18,7 @@ func (a *Account) Send(to string, msg xmpp.Message) error {
 	}
 	return nil
 }
-func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
+func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 	logger := log.WithFields(map[string]interface{}{
 		"from": a.XMPP.String(),
 		"to":   to,
@@ -33,24 +33,24 @@ func (a *Account) sending(to string, msg xmpp.Message) (o3.Message, error) {
 	for _, el := range msg.Extensions {
 		switch ex := el.(type) {
 
-		case *xmpp.StateActive:
+		case *stanza.StateActive:
 			chatState = true
-		case *xmpp.StateComposing:
+		case *stanza.StateComposing:
 			chatState = true
 			chatStateComposing = true
-		case *xmpp.StateGone:
+		case *stanza.StateGone:
 			chatState = true
-		case *xmpp.StateInactive:
+		case *stanza.StateInactive:
 			chatState = true
-		case *xmpp.StatePaused:
+		case *stanza.StatePaused:
 			chatState = true
 
-		case *xmpp.ReceiptReceived:
+		case *stanza.ReceiptReceived:
 			msgStateID = ex.ID
-		case *xmpp.MarkReceived:
+		case *stanza.MarkReceived:
 			msgStateID = ex.ID
 
-		case *xmpp.MarkDisplayed:
+		case *stanza.MarkDisplayed:
 			msgStateRead = true
 			msgStateID = ex.ID
 		}

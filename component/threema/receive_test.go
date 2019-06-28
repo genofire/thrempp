@@ -5,7 +5,7 @@ import (
 
 	"github.com/o3ma/o3"
 	"github.com/stretchr/testify/assert"
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
 const threemaID = "87654321"
@@ -55,7 +55,7 @@ func TestReceiveText(t *testing.T) {
 	assert.NoError(err)
 	p, err := a.receiving(txtMsg)
 	assert.NoError(err)
-	xMSG, ok := p.(xmpp.Message)
+	xMSG, ok := p.(stanza.Message)
 	assert.True(ok)
 	assert.Equal("Oojoh0Ah", xMSG.Body)
 }
@@ -125,9 +125,9 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert.NoError(err)
 	p, err := a.receiving(drm)
 	assert.NoError(err)
-	xMSG, ok := p.(xmpp.Message)
+	xMSG, ok := p.(stanza.Message)
 	assert.True(ok)
-	rr := xMSG.Extensions[0].(xmpp.ReceiptReceived)
+	rr := xMSG.Extensions[0].(stanza.ReceiptReceived)
 	assert.Equal("im4aeseeh1IbaQui", rr.ID)
 
 	// receiving delivered -> not in cache
@@ -140,9 +140,9 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert.NoError(err)
 	p, err = a.receiving(drm)
 	assert.NoError(err)
-	xMSG, ok = p.(xmpp.Message)
+	xMSG, ok = p.(stanza.Message)
 	assert.True(ok)
-	cmdd := xMSG.Extensions[0].(xmpp.MarkDisplayed)
+	cmdd := xMSG.Extensions[0].(stanza.MarkDisplayed)
 	assert.Equal("im4aeseeh1IbaQui", cmdd.ID)
 
 	// receiving delivered -> not in cache
@@ -159,16 +159,16 @@ func TestReceiveTyping(t *testing.T) {
 	tnm := o3.TypingNotificationMessage{}
 	p, err := a.receiving(tnm)
 	assert.NoError(err)
-	xMSG, ok := p.(xmpp.Message)
+	xMSG, ok := p.(stanza.Message)
 	assert.True(ok)
-	assert.IsType(xmpp.StateInactive{}, xMSG.Extensions[0])
+	assert.IsType(stanza.StateInactive{}, xMSG.Extensions[0])
 
 	// receiving composing
 	tnm = o3.TypingNotificationMessage{}
 	tnm.OnOff = 0x1
 	p, err = a.receiving(tnm)
 	assert.NoError(err)
-	xMSG, ok = p.(xmpp.Message)
+	xMSG, ok = p.(stanza.Message)
 	assert.True(ok)
-	assert.IsType(xmpp.StateComposing{}, xMSG.Extensions[0])
+	assert.IsType(stanza.StateComposing{}, xMSG.Extensions[0])
 }

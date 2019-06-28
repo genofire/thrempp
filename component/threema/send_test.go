@@ -5,7 +5,7 @@ import (
 
 	"github.com/o3ma/o3"
 	"github.com/stretchr/testify/assert"
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
 func TestAccountSend(t *testing.T) {
@@ -20,9 +20,9 @@ func TestAccountSend(t *testing.T) {
 	}
 
 	go func() {
-		a.Send("a", xmpp.Message{
-			PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-			Body:        "ohz8kai0ohNgohth",
+		a.Send("a", stanza.Message{
+			Attrs: stanza.Attrs{From: "a@example.org"},
+			Body:  "ohz8kai0ohNgohth",
 		})
 	}()
 	p := <-send
@@ -31,10 +31,10 @@ func TestAccountSend(t *testing.T) {
 	assert.Contains(msg.Text(), "ohz8kai0ohNgohth")
 
 	// test error
-	err := a.Send("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.ReceiptReceived{ID: "blub"},
+	err := a.Send("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
@@ -48,20 +48,20 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	}
 
 	// test error - threema send only int ids
-	msg, err := a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.ReceiptReceived{ID: "blub"},
+	msg, err := a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.ReceiptReceived{ID: "blub"},
 		},
 	})
 	assert.Error(err)
 	assert.Nil(msg)
 
 	// test delivered
-	msg, err = a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.MarkReceived{ID: "3"},
+	msg, err = a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.MarkReceived{ID: "3"},
 		},
 	})
 	assert.NoError(err)
@@ -70,10 +70,10 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	assert.Equal(o3.MSGDELIVERED, drm.Status())
 
 	// test read
-	msg, err = a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.MarkDisplayed{ID: "5"},
+	msg, err = a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.MarkDisplayed{ID: "5"},
 		},
 	})
 	assert.NoError(err)
@@ -91,37 +91,37 @@ func TestSendTyping(t *testing.T) {
 	}
 
 	// skip typing messae
-	msg, err := a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.StateComposing{},
+	msg, err := a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.StateComposing{},
 		},
 	})
 	assert.NoError(err)
 	assert.Nil(msg)
 
 	// skip gone
-	msg, err = a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.StateActive{},
-			&xmpp.StateGone{},
-			&xmpp.StateInactive{},
-			&xmpp.StatePaused{},
+	msg, err = a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.StateActive{},
+			&stanza.StateGone{},
+			&stanza.StateInactive{},
+			&stanza.StatePaused{},
 		},
 	})
 	assert.NoError(err)
 	assert.Nil(msg)
 
 	// skip gone
-	msg, err = a.sending("a", xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{From: "a@example.org"},
-		Extensions: []xmpp.MsgExtension{
-			&xmpp.StateActive{},
-			&xmpp.StateComposing{},
-			&xmpp.StateGone{},
-			&xmpp.StateInactive{},
-			&xmpp.StatePaused{},
+	msg, err = a.sending("a", stanza.Message{
+		Attrs: stanza.Attrs{From: "a@example.org"},
+		Extensions: []stanza.MsgExtension{
+			&stanza.StateActive{},
+			&stanza.StateComposing{},
+			&stanza.StateGone{},
+			&stanza.StateInactive{},
+			&stanza.StatePaused{},
 		},
 		Body: "hi",
 	})

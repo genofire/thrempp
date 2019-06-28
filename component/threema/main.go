@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/bdlm/log"
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 
 	"dev.sum7.eu/genofire/golang-lib/database"
 
@@ -15,7 +15,7 @@ import (
 
 type Threema struct {
 	component.Component
-	out            chan xmpp.Packet
+	out            chan stanza.Packet
 	accountJID     map[string]*Account
 	bot            map[string]*Bot
 	httpUploadPath string
@@ -24,7 +24,7 @@ type Threema struct {
 
 func NewThreema(config map[string]interface{}) (component.Component, error) {
 	t := &Threema{
-		out:        make(chan xmpp.Packet),
+		out:        make(chan stanza.Packet),
 		accountJID: make(map[string]*Account),
 		bot:        make(map[string]*Bot),
 	}
@@ -45,7 +45,7 @@ func NewThreema(config map[string]interface{}) (component.Component, error) {
 	return t, nil
 }
 
-func (t *Threema) Connect() (chan xmpp.Packet, error) {
+func (t *Threema) Connect() (chan stanza.Packet, error) {
 	var jids []*models.JID
 	database.Read.Find(&jids)
 	for _, jid := range jids {
@@ -60,37 +60,37 @@ func (t *Threema) Connect() (chan xmpp.Packet, error) {
 	}
 	return t.out, nil
 }
-func (t *Threema) Send(packet xmpp.Packet) {
+func (t *Threema) Send(packet stanza.Packet) {
 	if p := t.send(packet); p != nil {
 		t.out <- p
 	}
 }
-func (t *Threema) send(packet xmpp.Packet) xmpp.Packet {
+func (t *Threema) send(packet stanza.Packet) stanza.Packet {
 	switch p := packet.(type) {
-	case xmpp.Message:
-		from := models.ParseJID(p.PacketAttrs.From)
-		to := models.ParseJID(p.PacketAttrs.To)
+	case stanza.Message:
+		from := models.ParseJID(p.Attrs.From)
+		to := models.ParseJID(p.Attrs.To)
 
 		if to.IsDomain() {
 			if from == nil {
 				log.Warn("receive message without sender")
 				return nil
 			}
-			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
+			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
 			msg.Body = t.getBot(from).Handle(p.Body)
 			return msg
 		}
 
 		account, err := t.getAccount(from)
 		if err != nil {
-			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
+			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
 			msg.Body = "It was not possible to send, because we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
 			return msg
 		}
 
 		threemaID := strings.ToUpper(to.Local)
 		if err := account.Send(threemaID, p); err != nil {
-			msg := xmpp.NewMessage("chat", "", from.String(), "", "en")
+			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
 			msg.Body = err.Error()
 			return msg
 		}

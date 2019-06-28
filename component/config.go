@@ -2,6 +2,7 @@ package component
 
 import (
 	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
 type Config struct {
@@ -23,8 +24,8 @@ func (c *Config) Start() (err error) {
 	}
 
 	router := xmpp.NewRouter()
-	router.NewRoute().IQNamespaces(xmpp.NSDiscoInfo).HandlerFunc(c.handleDiscoInfo)
-	router.NewRoute().IQNamespaces(xmpp.NSDiscoItems).HandlerFunc(c.handleDiscoItems)
+	router.NewRoute().IQNamespaces(stanza.NSDiscoInfo).HandlerFunc(c.handleDiscoInfo)
+	router.NewRoute().IQNamespaces(stanza.NSDiscoItems).HandlerFunc(c.handleDiscoItems)
 	router.HandleFunc("iq", c.handleIQ)
 	router.HandleFunc("message", c.handleMessage)
 

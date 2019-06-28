@@ -5,13 +5,13 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 )
 
-func (a *Account) FileToXMPP(from string, msgID uint64, ext string, data []byte) (xmpp.Message, error) {
+func (a *Account) FileToXMPP(from string, msgID uint64, ext string, data []byte) (stanza.Message, error) {
 	msgIDStr := strconv.FormatUint(msgID, 10)
-	msg := xmpp.Message{
-		PacketAttrs: xmpp.PacketAttrs{
+	msg := stanza.Message{
+		Attrs: stanza.Attrs{
 			Id:   msgIDStr,
 			From: from,
 			To:   a.XMPP.String(),
@@ -24,6 +24,6 @@ func (a *Account) FileToXMPP(from string, msgID uint64, ext string, data []byte)
 		return msg, err
 	}
 	msg.Body = url
-	msg.Extensions = append(msg.Extensions, xmpp.OOB{URL: url})
+	msg.Extensions = append(msg.Extensions, stanza.OOB{URL: url})
 	return msg, nil
 }

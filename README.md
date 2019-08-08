@@ -1,8 +1,8 @@
 # Thrempp
-[![pipeline status](https://dev.sum7.eu/genofire/thrempp/badges/master/pipeline.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
-[![coverage report](https://dev.sum7.eu/genofire/thrempp/badges/master/coverage.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
-[![Go Report Card](https://goreportcard.com/badge/dev.sum7.eu/genofire/thrempp)](https://goreportcard.com/report/dev.sum7.eu/genofire/thrempp)
-[![GoDoc](https://godoc.org/dev.sum7.eu/genofire/thrempp?status.svg)](https://godoc.org/dev.sum7.eu/genofire/thrempp)
+[![pipeline status](https://dev.sum7.eu/sum7/thrempp/badges/master/pipeline.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
+[![coverage report](https://dev.sum7.eu/sum7/thrempp/badges/master/coverage.svg)](https://dev.sum7.eu/genofire/thrempp/pipelines)
+[![Go Report Card](https://goreportcard.com/badge/dev.sum7.eu/sum7/thrempp)](https://goreportcard.com/report/dev.sum7.eu/genofire/thrempp)
+[![GoDoc](https://godoc.org/dev.sum7.eu/sum7/thrempp?status.svg)](https://godoc.org/dev.sum7.eu/genofire/thrempp)
  [![](https://inverse.chat/badge.svg?room=thrempp@conference.chat.sum7.eu)](https://conversations.im/j/thrempp@conference.chat.sum7.eu)
 
 XMPP - Transport
@@ -15,14 +15,14 @@ ATM planned support for Threema only
 
 Latest Build binary from ci here:
 
-[Download All](https://dev.sum7.eu/genofire/thrempp/-/jobs/artifacts/master/download/?job=build-my-project) (with config example)
+[Download All](https://dev.sum7.eu/sum7/thrempp/-/jobs/artifacts/master/download/?job=build-my-project) (with config example)
 
-[Download Binary](https://dev.sum7.eu/genofire/thrempp/-/jobs/artifacts/master/raw/bin/thrempp?inline=false&job=build-my-project)
+[Download Binary](https://dev.sum7.eu/sum7/thrempp/-/jobs/artifacts/master/raw/bin/thrempp?inline=false&job=build-my-project)
 
 #### Build
 
 ```bash
-go get -u dev.sum7.eu/genofire/thrempp
+go get -u dev.sum7.eu/sum7/thrempp
 ```
 
 ## Configure

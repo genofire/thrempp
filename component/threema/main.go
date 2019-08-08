@@ -9,8 +9,8 @@ import (
 
 	"dev.sum7.eu/genofire/golang-lib/database"
 
-	"dev.sum7.eu/genofire/thrempp/component"
-	"dev.sum7.eu/genofire/thrempp/models"
+	"dev.sum7.eu/sum7/thrempp/component"
+	"dev.sum7.eu/sum7/thrempp/models"
 )
 
 type Threema struct {

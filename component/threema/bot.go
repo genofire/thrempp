@@ -8,7 +8,7 @@ import (
 
 	"dev.sum7.eu/genofire/golang-lib/database"
 
-	"dev.sum7.eu/genofire/thrempp/models"
+	"dev.sum7.eu/sum7/thrempp/models"
 )
 
 type Bot struct {

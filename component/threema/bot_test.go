@@ -6,7 +6,7 @@ import (
 	"dev.sum7.eu/genofire/golang-lib/database"
 	"github.com/stretchr/testify/assert"
 
-	"dev.sum7.eu/genofire/thrempp/models"
+	"dev.sum7.eu/sum7/thrempp/models"
 )
 
 func TestBot(t *testing.T) {

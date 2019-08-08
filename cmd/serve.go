@@ -12,10 +12,10 @@ import (
 	"dev.sum7.eu/genofire/golang-lib/database"
 	"dev.sum7.eu/genofire/golang-lib/file"
 
-	"dev.sum7.eu/genofire/thrempp/component"
+	"dev.sum7.eu/sum7/thrempp/component"
 	// need for database init
-	_ "dev.sum7.eu/genofire/thrempp/component/all"
-	_ "dev.sum7.eu/genofire/thrempp/models"
+	_ "dev.sum7.eu/sum7/thrempp/component/all"
+	_ "dev.sum7.eu/sum7/thrempp/models"
 )
 
 type Config struct {

@@ -28,7 +28,7 @@ func TestAccountSend(t *testing.T) {
 	p := <-send
 	assert.NotNil(p)
 	msg := p.(o3.TextMessage)
-	assert.Contains(msg.Text(), "ohz8kai0ohNgohth")
+	assert.Contains(msg.Body, "ohz8kai0ohNgohth")
 
 	// test error
 	err := a.Send("a", stanza.Message{
@@ -67,7 +67,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	assert.NoError(err)
 	drm, ok := msg.(o3.DeliveryReceiptMessage)
 	assert.True(ok)
-	assert.Equal(o3.MSGDELIVERED, drm.Status())
+	assert.Equal(o3.MSGDELIVERED, drm.Status)
 
 	// test read
 	msg, err = a.sending("a", stanza.Message{
@@ -79,7 +79,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	assert.NoError(err)
 	drm, ok = msg.(o3.DeliveryReceiptMessage)
 	assert.True(ok)
-	assert.Equal(o3.MSGREAD, drm.Status())
+	assert.Equal(o3.MSGREAD, drm.Status)
 }
 func TestSendTyping(t *testing.T) {
 	assert := assert.New(t)
@@ -128,5 +128,5 @@ func TestSendTyping(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(msg)
 	o3msg := msg.(o3.TextMessage)
-	assert.Contains(o3msg.Text(), "hi")
+	assert.Contains(o3msg.Body, "hi")
 }

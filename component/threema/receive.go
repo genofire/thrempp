@@ -19,13 +19,14 @@ func (a *Account) receiver(out chan<- stanza.Packet) {
 			out <- xMSG
 			continue
 		}
-		sender := receivedMessage.Msg.Sender().String()
+		header := receivedMessage.Msg.Header()
+		sender := header.Sender.String()
 		if string(a.TID) == sender {
 			continue
 		}
 		if p, err := a.receiving(receivedMessage.Msg); err != nil {
 			xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
-			xMSG.Body = fmt.Sprintf("error on decoding message: %s\n%v", err, receivedMessage.Msg.Serialize())
+			xMSG.Body = fmt.Sprintf("error on decoding message: %s\n%v", err, receivedMessage.Msg)
 			out <- xMSG
 		} else if p != nil {
 			out <- p
@@ -40,77 +41,77 @@ func requestExtensions(xMSG *stanza.Message) {
 }
 
 func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
+	header := receivedMessage.Header()
+	sender := header.Sender.String()
 	logger := log.WithFields(map[string]interface{}{
-		"from": receivedMessage.Sender().String(),
+		"from": header.Sender.String(),
 		"to":   a.XMPP.String(),
 	})
 	switch msg := receivedMessage.(type) {
 	case o3.TextMessage:
-		sender := msg.Sender().String()
-		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(msg.ID(), 10)})
-		xMSG.Body = msg.Text()
+		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
+		xMSG.Body = msg.Body
 		requestExtensions(&xMSG)
 		logger.WithField("text", xMSG.Body).Debug("send text")
 		return xMSG, nil
+	/*
+		case o3.AudioMessage:
+			if a.threema.httpUploadPath == "" {
+				return nil, errors.New("no place to store files at transport configurated")
+			}
+			data, err := msg.GetAudioData(a.Session)
+			if err != nil {
+				logger.Warnf("unable to read data from message: %s", err)
+				return nil, err
+			}
+			xMSG, err := a.FileToXMPP(sender.String(), header.ID, "mp3", data)
+			if err != nil {
+				logger.Warnf("unable to create data from message: %s", err)
+				return nil, err
+			}
+			xMSG.Type = "chat"
+			requestExtensions(&xMSG)
+			logger.WithField("url", xMSG.Body).Debug("send audio")
+			return xMSG, nil
 
-	case o3.AudioMessage:
-		if a.threema.httpUploadPath == "" {
-			return nil, errors.New("no place to store files at transport configurated")
-		}
-		data, err := msg.GetAudioData(a.Session)
-		if err != nil {
-			logger.Warnf("unable to read data from message: %s", err)
-			return nil, err
-		}
-		xMSG, err := a.FileToXMPP(msg.Sender().String(), msg.ID(), "mp3", data)
-		if err != nil {
-			logger.Warnf("unable to create data from message: %s", err)
-			return nil, err
-		}
-		xMSG.Type = "chat"
-		requestExtensions(&xMSG)
-		logger.WithField("url", xMSG.Body).Debug("send audio")
-		return xMSG, nil
-
-	case o3.ImageMessage:
-		if a.threema.httpUploadPath == "" {
-			return nil, errors.New("no place to store files at transport configurated")
-		}
-		data, err := msg.GetImageData(a.Session)
-		if err != nil {
-			logger.Warnf("unable to read data from message: %s", err)
-			return nil, err
-		}
-		xMSG, err := a.FileToXMPP(msg.Sender().String(), msg.ID(), "jpg", data)
-		if err != nil {
-			logger.Warnf("unable to create data from message: %s", err)
-			return nil, err
-		}
-		xMSG.Type = "chat"
-		requestExtensions(&xMSG)
-		logger.WithField("url", xMSG.Body).Debug("send image")
-		return xMSG, nil
-
+		case o3.ImageMessage:
+			if a.threema.httpUploadPath == "" {
+				return nil, errors.New("no place to store files at transport configurated")
+			}
+			data, err := msg.GetImageData(a.Session)
+			if err != nil {
+				logger.Warnf("unable to read data from message: %s", err)
+				return nil, err
+			}
+			xMSG, err := a.FileToXMPP(sender.String(), header.ID, "jpg", data)
+			if err != nil {
+				logger.Warnf("unable to create data from message: %s", err)
+				return nil, err
+			}
+			xMSG.Type = "chat"
+			requestExtensions(&xMSG)
+			logger.WithField("url", xMSG.Body).Debug("send image")
+			return xMSG, nil
+	*/
 	case o3.DeliveryReceiptMessage:
-		msgID := msg.MsgID()
-		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: msg.Sender().String(), To: a.XMPP.String()})
+		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
 		state := ""
 
-		if msg.Status() == o3.MSGDELIVERED {
+		if msg.Status == o3.MSGDELIVERED {
 			state = "delivered"
-			if id, ok := a.deliveredMSG[msgID]; ok {
+			if id, ok := a.deliveredMSG[msg.MessageID]; ok {
 				xMSG.Extensions = append(xMSG.Extensions, stanza.ReceiptReceived{ID: id})
 				xMSG.Extensions = append(xMSG.Extensions, stanza.MarkReceived{ID: id})
-				delete(a.deliveredMSG, msgID)
+				delete(a.deliveredMSG, msg.MessageID)
 			} else {
 				logger.Warnf("found not id in cache to announce received on xmpp side")
 			}
 		}
-		if msg.Status() == o3.MSGREAD {
+		if msg.Status == o3.MSGREAD {
 			state = "displayed"
-			if id, ok := a.readedMSG[msgID]; ok {
+			if id, ok := a.readedMSG[msg.MessageID]; ok {
 				xMSG.Extensions = append(xMSG.Extensions, stanza.MarkDisplayed{ID: id})
-				delete(a.readedMSG, msgID)
+				delete(a.readedMSG, msg.MessageID)
 			} else {
 				logger.Warnf("found not id in cache to announce readed on xmpp side")
 			}
@@ -122,7 +123,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 		}
 		return nil, nil
 	case o3.TypingNotificationMessage:
-		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: msg.Sender().String(), To: a.XMPP.String(), Id: strconv.FormatUint(msg.ID(), 10)})
+		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		if msg.OnOff != 0 {
 			logger.Debug("composing")
 			xMSG.Extensions = append(xMSG.Extensions, stanza.StateComposing{})

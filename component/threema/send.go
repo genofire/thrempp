@@ -23,6 +23,8 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 		"from": a.XMPP.String(),
 		"to":   to,
 	})
+	msg3To := o3.NewIDString(to)
+	msg3From := o3.NewIDString(string(a.AccountThreema.TID))
 
 	chatState := false
 	chatStateComposing := false
@@ -61,22 +63,29 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 			if err != nil {
 				return nil, err
 			}
-			msgType := o3.MSGDELIVERED
-			if msgStateRead {
-				msgType = o3.MSGREAD
+			drm := o3.DeliveryReceiptMessage{
+				MessageHeader: &o3.MessageHeader{
+					Sender:    msg3From,
+					ID:        id,
+					Recipient: msg3To,
+				},
+				Status: o3.MSGDELIVERED,
 			}
-			drm, err := o3.NewDeliveryReceiptMessage(&a.Session, to, id, msgType)
-			if err != nil {
-				return nil, err
+			if msgStateRead {
+				drm.Status = o3.MSGREAD
 			}
 			logger.WithFields(map[string]interface{}{
 				"msg_id": id,
-				"type":   msgType,
+				"type":   drm.Status,
 			}).Debug("update status of threema message")
 			return drm, nil
 		}
 		if chatState {
-			tnm := o3.TypingNotificationMessage{}
+			tnm := o3.TypingNotificationMessage{
+				MessageHeader: &o3.MessageHeader{
+					Sender: o3.NewIDString(string(a.AccountThreema.TID)),
+				},
+			}
 			if chatStateComposing {
 				tnm.OnOff = 0x1
 			}
@@ -86,17 +95,22 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 			return nil, nil
 		}
 	}
+	msg3ID := o3.NewMsgID()
 
 	// send text message
-	msg3, err := o3.NewTextMessage(&a.Session, to, msg.Body)
-	if err != nil {
-		return nil, err
+	msg3 := o3.TextMessage{
+		MessageHeader: &o3.MessageHeader{
+			Sender:    o3.NewIDString(string(a.AccountThreema.TID)),
+			ID:        msg3ID,
+			Recipient: msg3To,
+		},
+		Body: msg.Body,
 	}
-	a.deliveredMSG[msg3.ID()] = msg.Id
-	a.readedMSG[msg3.ID()] = msg.Id
+	a.deliveredMSG[msg3ID] = msg.Id
+	a.readedMSG[msg3ID] = msg.Id
 	logger.WithFields(map[string]interface{}{
 		"x_id": msg.Id,
-		"t_id": msg3.ID(),
+		"t_id": msg3ID,
 		"text": msg.Body,
 	}).Debug("send text")
 	return msg3, nil

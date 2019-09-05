@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/bdlm/log"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +18,8 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		// workaround for Fatal (os.Exit(1))
+		//TODO https://github.com/stretchr/testify/issues/813
+		log.Panic(err)
 	}
 }

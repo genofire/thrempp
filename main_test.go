@@ -1,7 +1,14 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestDummy(t *testing.T) {
-	main()
+	assert := assert.New(t)
+	assert.Panics(func() {
+		main()
+	})
 }

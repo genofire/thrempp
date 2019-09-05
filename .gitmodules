@@ -1,7 +1,7 @@
 [submodule "vendor/github.com/o3ma/o3"]
 	path = vendor/github.com/o3ma/o3
 	url = https://github.com/genofire/o3.git
+	branch = fixtests
 [submodule "vendor/gosrc.io/xmpp"]
 	path = vendor/gosrc.io/xmpp
-	url = https://github.com/genofire/go-xmpp.git
-	branch = patch-1
+	url = https://github.com/FluuxIO/go-xmpp.git

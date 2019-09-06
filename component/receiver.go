@@ -31,6 +31,7 @@ func (c *Config) handleDiscoInfo(s xmpp.Sender, p stanza.Packet) {
 			{Var: stanza.NSMsgReceipts},
 			{Var: stanza.NSMsgChatMarkers},
 			{Var: stanza.NSMsgChatStateNotifications},
+			{Var: "http://jabber.org/protocol/muc"},
 		},
 	}
 	if discoInfo.Node == "" {
@@ -98,15 +99,20 @@ func (c *Config) handleIQ(s xmpp.Sender, p stanza.Packet) {
 }
 func (c *Config) handleMessage(s xmpp.Sender, p stanza.Packet) {
 	msg, ok := p.(stanza.Message)
+	attr := msg.Attrs
 	if !ok {
-		return
+		pr, ok := p.(stanza.Message)
+		attr = pr.Attrs
+		if !ok {
+			return
+		}
 	}
 	if c.XMPPDebug {
 		log.WithFields(map[string]interface{}{
 			"type": c.Type,
 			"from": s,
-			"to":   msg.To,
-			"id":   msg.Id,
+			"to":   attr.To,
+			"id":   attr.Id,
 		}).Debug(msg.XMPPFormat())
 	}
 	c.comp.Send(p)

@@ -29,6 +29,7 @@ func (c *Config) Start() error {
 	router.NewRoute().IQNamespaces(stanza.NSDiscoItems).HandlerFunc(c.handleDiscoItems)
 	router.HandleFunc("iq", c.handleIQ)
 	router.HandleFunc("message", c.handleMessage)
+	router.HandleFunc("presence", c.handleMessage)
 
 	c.xmpp, err = xmpp.NewComponent(xmpp.ComponentOptions{
 		Domain:   c.Host,

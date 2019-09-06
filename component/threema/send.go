@@ -1,7 +1,9 @@
 package threema
 
 import (
+	"encoding/base32"
 	"strconv"
+	"strings"
 
 	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
@@ -31,6 +33,18 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 		ID:        msg3ID,
 		Recipient: o3.NewIDString(to),
 		PubNick:   a.ThreemaID.Nick,
+	}
+	var groupHeader *o3.GroupMessageHeader
+	if msg.Type == stanza.MessageTypeGroupchat {
+		toA := strings.SplitN(to, "-", 2)
+		gid, err := base32.StdEncoding.DecodeString(toA[1])
+		if err != nil {
+			return nil, err
+		}
+		groupHeader = &o3.GroupMessageHeader{
+			CreatorID: o3.NewIDString(toA[0]),
+		}
+		copy(groupHeader.GroupID[:], gid)
 	}
 	chatState := false
 	chatStateComposing := false
@@ -102,12 +116,21 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 		MessageHeader: header,
 		Body:          msg.Body,
 	}
-	a.deliveredMSG[msg3ID] = msg.Id
-	a.readedMSG[msg3ID] = msg.Id
-	logger.WithFields(map[string]interface{}{
+	logger = logger.WithFields(map[string]interface{}{
 		"x_id": msg.Id,
 		"t_id": msg3ID,
 		"text": msg.Body,
-	}).Debug("send text")
+	})
+	if groupHeader != nil {
+		logger.Debug("send grouptext")
+		// TODO iterate of all occupants
+		return &o3.GroupTextMessage{
+			GroupMessageHeader: groupHeader,
+			TextMessage:        msg3,
+		}, nil
+	}
+	a.deliveredMSG[msg3ID] = msg.Id
+	a.readedMSG[msg3ID] = msg.Id
+	logger.Debug("send text")
 	return msg3, nil
 }

@@ -26,8 +26,8 @@ func (t *Threema) getBot(jid *models.JID) *Bot {
 	if db := database.Read; db != nil && db.DB().Ping() == nil {
 		if err := db.Where(jid).First(jid); err.RecordNotFound() {
 			database.Write.Create(jid)
-		} else if err != nil {
-			log.Errorf("error getting jid %s from datatbase: %s", jid.String(), err.Error)
+		} else if err.Error != nil {
+			log.Errorf("error getting jid %s from database: %s", jid.String(), err.Error)
 		}
 	}
 	bot := &Bot{

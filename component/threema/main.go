@@ -67,6 +67,9 @@ func (t *Threema) Send(packet stanza.Packet) {
 }
 func (t *Threema) send(packet stanza.Packet) stanza.Packet {
 	switch p := packet.(type) {
+	case stanza.Presence:
+		log.Debug(p)
+		return nil
 	case stanza.Message:
 		from := models.ParseJID(p.Attrs.From)
 		to := models.ParseJID(p.Attrs.To)

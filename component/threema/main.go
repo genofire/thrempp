@@ -70,7 +70,13 @@ func (t *Threema) send(packet stanza.Packet) stanza.Packet {
 	case stanza.Message:
 		from := models.ParseJID(p.Attrs.From)
 		to := models.ParseJID(p.Attrs.To)
-
+		if p.Attrs.Type == stanza.MessageTypeError {
+			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
+			if p.Error.Text == "User session not found" {
+				msg.Body = "please join groupchat xmpp:" + to.String() + "?join"
+			}
+			return msg
+		}
 		if to.IsDomain() {
 			if from == nil {
 				log.Warn("receive message without sender")
@@ -86,6 +92,13 @@ func (t *Threema) send(packet stanza.Packet) stanza.Packet {
 			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
 			msg.Body = "It was not possible to send, because we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
 			return msg
+		}
+		if to == nil {
+			log.WithFields(map[string]interface{}{
+				"from": from,
+				"to":   to,
+			}).Panicf("no to found")
+			return nil
 		}
 
 		threemaID := strings.ToUpper(to.Local)

@@ -43,7 +43,7 @@ func (c *Config) handleDiscoInfo(s xmpp.Sender, p stanza.Packet) {
 	iq.Payload = &payload
 	log.WithFields(map[string]interface{}{
 		"type": c.Type,
-		"from": s,
+		"from": attrs.From,
 		"to":   attrs.To,
 	}).Debug("disco info")
 	s.Send(iq)

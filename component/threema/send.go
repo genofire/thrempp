@@ -19,12 +19,14 @@ func (a *Account) Send(to string, msg stanza.Message) error {
 	return nil
 }
 func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
+	from := string(a.AccountThreema.TID)
 	logger := log.WithFields(map[string]interface{}{
-		"from": a.XMPP.String(),
-		"to":   to,
+		"from":   a.XMPP.String(),
+		"from_t": from,
+		"to":     to,
 	})
 	msg3To := o3.NewIDString(to)
-	msg3From := o3.NewIDString(string(a.AccountThreema.TID))
+	msg3From := o3.NewIDString(from)
 
 	chatState := false
 	chatStateComposing := false
@@ -63,11 +65,12 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 			if err != nil {
 				return nil, err
 			}
-			drm := o3.DeliveryReceiptMessage{
+			drm := &o3.DeliveryReceiptMessage{
 				MessageHeader: &o3.MessageHeader{
 					Sender:    msg3From,
 					ID:        id,
 					Recipient: msg3To,
+					PubNick:   a.ThreemaID.Nick,
 				},
 				Status: o3.MSGDELIVERED,
 			}
@@ -81,9 +84,11 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 			return drm, nil
 		}
 		if chatState {
-			tnm := o3.TypingNotificationMessage{
+			tnm := &o3.TypingNotificationMessage{
 				MessageHeader: &o3.MessageHeader{
-					Sender: o3.NewIDString(string(a.AccountThreema.TID)),
+					Sender:    msg3From,
+					Recipient: msg3To,
+					PubNick:   a.ThreemaID.Nick,
 				},
 			}
 			if chatStateComposing {
@@ -91,18 +96,19 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 			}
 			logger.WithFields(map[string]interface{}{
 				"state": chatStateComposing,
-			}).Debug("not send typing")
-			return nil, nil
+			}).Debug("send typing")
+			return tnm, nil
 		}
 	}
 	msg3ID := o3.NewMsgID()
 
 	// send text message
-	msg3 := o3.TextMessage{
+	msg3 := &o3.TextMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender:    o3.NewIDString(string(a.AccountThreema.TID)),
 			ID:        msg3ID,
 			Recipient: msg3To,
+			PubNick:   a.ThreemaID.Nick,
 		},
 		Body: msg.Body,
 	}

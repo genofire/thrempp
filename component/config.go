@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/bdlm/log"
 	"gosrc.io/xmpp"
 	"gosrc.io/xmpp/stanza"
 )
@@ -17,10 +18,10 @@ type Config struct {
 	comp Component
 }
 
-func (c *Config) Start() (err error) {
+func (c *Config) Start() error {
 	out, err := c.comp.Connect()
 	if err != nil {
-		return
+		return err
 	}
 
 	router := xmpp.NewRouter()
@@ -38,10 +39,14 @@ func (c *Config) Start() (err error) {
 		Type:     "service",
 	}, router)
 	if err != nil {
-		return
+		return err
 	}
 	cm := xmpp.NewStreamManager(c.xmpp, nil)
-	go cm.Run()
+	go func() {
+		if err := cm.Run(); err != nil {
+			log.WithField("host", c.Host).Panicf("xmpp stream not started: %s", err)
+		}
+	}()
 	go c.sender(out)
 
 	return nil

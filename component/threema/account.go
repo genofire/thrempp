@@ -13,7 +13,7 @@ import (
 type Account struct {
 	models.AccountThreema
 	threema      *Threema
-	Session      o3.SessionContext
+	ThreemaID    *o3.ThreemaID
 	send         chan<- o3.Message
 	receive      <-chan o3.ReceivedMsg
 	deliveredMSG map[uint64]string
@@ -46,10 +46,11 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 
 	a := &Account{
 		AccountThreema: account,
-		Session:        o3.NewSessionContext(tid),
+		ThreemaID:      &tid,
 		threema:        t,
 	}
-	a.send, a.receive, err = a.Session.Run()
+	session := o3.NewSessionContext(tid)
+	a.send, a.receive, err = session.Run()
 
 	if err != nil {
 		return nil, err

@@ -4,4 +4,5 @@
 	branch = fixtests
 [submodule "vendor/gosrc.io/xmpp"]
 	path = vendor/gosrc.io/xmpp
-	url = https://github.com/FluuxIO/go-xmpp.git
+	url = https://github.com/genofire/go-xmpp.git
+	branch = fix-component

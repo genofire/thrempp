@@ -1,9 +1,11 @@
 package threema
 
 import (
+	"encoding/base32"
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
@@ -40,15 +42,29 @@ func requestExtensions(xMSG *stanza.Message) {
 	xMSG.Extensions = append(xMSG.Extensions, stanza.StateActive{})
 }
 
+func jidFromThreemaGroup(sender string, header *o3.GroupMessageHeader) string {
+	cid := strings.ToLower(header.CreatorID.String())
+	gid := strings.ToLower(base32.StdEncoding.EncodeToString(header.GroupID[:]))
+	return fmt.Sprintf("%s-%s@{{DOMAIN}}/%s", cid, gid, sender)
+}
+
 func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 	header := receivedMessage.Header()
 	sender := header.Sender.String()
 	logger := log.WithFields(map[string]interface{}{
-		"from": header.Sender.String(),
+		"from": sender,
+		"to_t": header.Recipient.String(),
 		"to":   a.XMPP.String(),
 	})
+	sender = strings.ToLower(sender)
 	switch msg := receivedMessage.(type) {
-	case o3.TextMessage:
+	case *o3.GroupTextMessage:
+		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeGroupchat, From: jidFromThreemaGroup(sender, msg.GroupMessageHeader), To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
+		xMSG.Body = msg.Body
+		requestExtensions(&xMSG)
+		logger.WithField("text", xMSG.Body).Debug("send text")
+		return xMSG, nil
+	case *o3.TextMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		xMSG.Body = msg.Body
 		requestExtensions(&xMSG)
@@ -93,7 +109,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 			logger.WithField("url", xMSG.Body).Debug("send image")
 			return xMSG, nil
 	*/
-	case o3.DeliveryReceiptMessage:
+	case *o3.DeliveryReceiptMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
 		state := ""
 
@@ -122,15 +138,14 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 			return xMSG, nil
 		}
 		return nil, nil
-	case o3.TypingNotificationMessage:
+	case *o3.TypingNotificationMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		if msg.OnOff != 0 {
-			logger.Debug("composing")
 			xMSG.Extensions = append(xMSG.Extensions, stanza.StateComposing{})
 		} else {
-			logger.Debug("inactive")
 			xMSG.Extensions = append(xMSG.Extensions, stanza.StateInactive{})
 		}
+		logger.Debug(msg.String())
 		return xMSG, nil
 	}
 	return nil, errors.New("not known data format")

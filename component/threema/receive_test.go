@@ -45,7 +45,7 @@ func TestReceiveText(t *testing.T) {
 	a := createDummyAccount()
 
 	// receiving text
-	txtMsg := o3.TextMessage{
+	txtMsg := &o3.TextMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender:    threemaFromIDByte,
 			Recipient: o3.NewIDString("12345678"),
@@ -117,7 +117,7 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	a.deliveredMSG[msgID] = "im4aeseeh1IbaQui"
 	a.readedMSG[msgID] = "im4aeseeh1IbaQui"
 
-	drm := o3.DeliveryReceiptMessage{
+	drm := &o3.DeliveryReceiptMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},
@@ -138,7 +138,7 @@ func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert.Nil(p)
 
 	// receiving readed
-	drm = o3.DeliveryReceiptMessage{
+	drm = &o3.DeliveryReceiptMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},
@@ -164,7 +164,7 @@ func TestReceiveTyping(t *testing.T) {
 	a := createDummyAccount()
 
 	// receiving inactive
-	tnm := o3.TypingNotificationMessage{
+	tnm := &o3.TypingNotificationMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},
@@ -177,7 +177,7 @@ func TestReceiveTyping(t *testing.T) {
 	assert.IsType(stanza.StateInactive{}, xMSG.Extensions[0])
 
 	// receiving composing
-	tnm = o3.TypingNotificationMessage{
+	tnm = &o3.TypingNotificationMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},

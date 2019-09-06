@@ -13,7 +13,7 @@ func TestAccountSend(t *testing.T) {
 
 	send := make(chan o3.Message)
 	a := Account{
-		Session:      o3.NewSessionContext(o3.ThreemaID{ID: o3.NewIDString("43218765")}),
+		ThreemaID:    &o3.ThreemaID{ID: o3.NewIDString("43218765")},
 		send:         send,
 		deliveredMSG: make(map[uint64]string),
 		readedMSG:    make(map[uint64]string),
@@ -27,7 +27,7 @@ func TestAccountSend(t *testing.T) {
 	}()
 	p := <-send
 	assert.NotNil(p)
-	msg := p.(o3.TextMessage)
+	msg := p.(*o3.TextMessage)
 	assert.Contains(msg.Body, "ohz8kai0ohNgohth")
 
 	// test error
@@ -44,7 +44,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 	assert := assert.New(t)
 
 	a := Account{
-		Session: o3.NewSessionContext(o3.ThreemaID{ID: o3.NewIDString("43218765")}),
+		ThreemaID: &o3.ThreemaID{ID: o3.NewIDString("43218765")},
 	}
 
 	// test error - threema send only int ids
@@ -65,7 +65,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 		},
 	})
 	assert.NoError(err)
-	drm, ok := msg.(o3.DeliveryReceiptMessage)
+	drm, ok := msg.(*o3.DeliveryReceiptMessage)
 	assert.True(ok)
 	assert.Equal(o3.MSGDELIVERED, drm.Status)
 
@@ -77,7 +77,7 @@ func TestAccountSendingDeliviery(t *testing.T) {
 		},
 	})
 	assert.NoError(err)
-	drm, ok = msg.(o3.DeliveryReceiptMessage)
+	drm, ok = msg.(*o3.DeliveryReceiptMessage)
 	assert.True(ok)
 	assert.Equal(o3.MSGREAD, drm.Status)
 }
@@ -85,12 +85,12 @@ func TestSendTyping(t *testing.T) {
 	assert := assert.New(t)
 
 	a := Account{
-		Session:      o3.NewSessionContext(o3.ThreemaID{ID: o3.NewIDString("43218765")}),
+		ThreemaID:    &o3.ThreemaID{ID: o3.NewIDString("43218765")},
 		deliveredMSG: make(map[uint64]string),
 		readedMSG:    make(map[uint64]string),
 	}
 
-	// skip typing messae
+	// skip typing message
 	msg, err := a.sending("a", stanza.Message{
 		Attrs: stanza.Attrs{From: "a@example.org"},
 		Extensions: []stanza.MsgExtension{
@@ -98,7 +98,7 @@ func TestSendTyping(t *testing.T) {
 		},
 	})
 	assert.NoError(err)
-	assert.Nil(msg)
+	assert.NotNil(msg)
 
 	// skip gone
 	msg, err = a.sending("a", stanza.Message{
@@ -111,7 +111,7 @@ func TestSendTyping(t *testing.T) {
 		},
 	})
 	assert.NoError(err)
-	assert.Nil(msg)
+	assert.NotNil(msg)
 
 	// skip gone
 	msg, err = a.sending("a", stanza.Message{
@@ -127,6 +127,6 @@ func TestSendTyping(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(msg)
-	o3msg := msg.(o3.TextMessage)
+	o3msg := msg.(*o3.TextMessage)
 	assert.Contains(o3msg.Body, "hi")
 }

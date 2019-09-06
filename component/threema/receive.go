@@ -62,13 +62,21 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeGroupchat, From: jidFromThreemaGroup(sender, msg.GroupMessageHeader), To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		xMSG.Body = msg.Body
 		requestExtensions(&xMSG)
-		logger.WithField("text", xMSG.Body).Debug("send text")
+		logger.WithFields(map[string]interface{}{
+			"from_x": xMSG.From,
+			"id":     xMSG.Id,
+			"text":   xMSG.Body,
+		}).Debug("recv grouptext")
 		return xMSG, nil
 	case *o3.TextMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		xMSG.Body = msg.Body
 		requestExtensions(&xMSG)
-		logger.WithField("text", xMSG.Body).Debug("send text")
+		logger.WithFields(map[string]interface{}{
+			"from_x": xMSG.From,
+			"id":     xMSG.Id,
+			"text":   xMSG.Body,
+		}).Debug("recv text")
 		return xMSG, nil
 	/*
 		case o3.AudioMessage:
@@ -87,7 +95,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 			}
 			xMSG.Type = "chat"
 			requestExtensions(&xMSG)
-			logger.WithField("url", xMSG.Body).Debug("send audio")
+			logger.WithField("url", xMSG.Body).Debug("recv audio")
 			return xMSG, nil
 
 		case o3.ImageMessage:
@@ -106,7 +114,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 			}
 			xMSG.Type = "chat"
 			requestExtensions(&xMSG)
-			logger.WithField("url", xMSG.Body).Debug("send image")
+			logger.WithField("url", xMSG.Body).Debug("recv image")
 			return xMSG, nil
 	*/
 	case *o3.DeliveryReceiptMessage:
@@ -134,7 +142,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 		}
 
 		if len(xMSG.Extensions) > 0 {
-			logger.WithField("state", state).Debug("send state")
+			logger.WithField("state", state).Debug("recv state")
 			return xMSG, nil
 		}
 		return nil, nil
@@ -145,7 +153,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 		} else {
 			xMSG.Extensions = append(xMSG.Extensions, stanza.StateInactive{})
 		}
-		logger.Debug(msg.String())
+		logger.WithField("on", msg.OnOff).Debug("recv typing")
 		return xMSG, nil
 	}
 	return nil, errors.New("not known data format")

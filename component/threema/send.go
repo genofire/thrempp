@@ -25,9 +25,13 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 		"from_t": from,
 		"to":     to,
 	})
-	msg3To := o3.NewIDString(to)
-	msg3From := o3.NewIDString(from)
-
+	msg3ID := o3.NewMsgID()
+	header := &o3.MessageHeader{
+		Sender:    o3.NewIDString(from),
+		ID:        msg3ID,
+		Recipient: o3.NewIDString(to),
+		PubNick:   a.ThreemaID.Nick,
+	}
 	chatState := false
 	chatStateComposing := false
 
@@ -66,13 +70,9 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 				return nil, err
 			}
 			drm := &o3.DeliveryReceiptMessage{
-				MessageHeader: &o3.MessageHeader{
-					Sender:    msg3From,
-					ID:        id,
-					Recipient: msg3To,
-					PubNick:   a.ThreemaID.Nick,
-				},
-				Status: o3.MSGDELIVERED,
+				MessageHeader: header,
+				Status:        o3.MSGDELIVERED,
+				MessageID:     id,
 			}
 			if msgStateRead {
 				drm.Status = o3.MSGREAD
@@ -85,32 +85,22 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 		}
 		if chatState {
 			tnm := &o3.TypingNotificationMessage{
-				MessageHeader: &o3.MessageHeader{
-					Sender:    msg3From,
-					Recipient: msg3To,
-					PubNick:   a.ThreemaID.Nick,
-				},
+				MessageHeader: header,
 			}
 			if chatStateComposing {
 				tnm.OnOff = 0x1
 			}
 			logger.WithFields(map[string]interface{}{
-				"state": chatStateComposing,
+				"on": tnm.OnOff,
 			}).Debug("send typing")
 			return tnm, nil
 		}
 	}
-	msg3ID := o3.NewMsgID()
 
 	// send text message
 	msg3 := &o3.TextMessage{
-		MessageHeader: &o3.MessageHeader{
-			Sender:    o3.NewIDString(string(a.AccountThreema.TID)),
-			ID:        msg3ID,
-			Recipient: msg3To,
-			PubNick:   a.ThreemaID.Nick,
-		},
-		Body: msg.Body,
+		MessageHeader: header,
+		Body:          msg.Body,
 	}
 	a.deliveredMSG[msg3ID] = msg.Id
 	a.readedMSG[msg3ID] = msg.Id

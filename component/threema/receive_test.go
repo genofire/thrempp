@@ -60,14 +60,13 @@ func TestReceiveText(t *testing.T) {
 	assert.Equal("Oojoh0Ah", xMSG.Body)
 }
 
-/*
 func TestReceiveAudio(t *testing.T) {
 	assert := assert.New(t)
 
 	a := createDummyAccount()
 	a.threema = &Threema{}
 
-	dataMsg := o3.ImageMessage{
+	dataMsg := o3.AudioMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},
@@ -76,7 +75,11 @@ func TestReceiveAudio(t *testing.T) {
 	assert.Error(err)
 
 	a.threema.httpUploadPath = "/tmp"
-	dataMsg = o3.AudioMessage{}
+	dataMsg = o3.AudioMessage{
+		MessageHeader: &o3.MessageHeader{
+			Sender: threemaFromIDByte,
+		},
+	}
 	_, err = a.receiving(dataMsg)
 	assert.Error(err)
 }
@@ -96,16 +99,19 @@ func TestReceiveImage(t *testing.T) {
 	assert.Error(err)
 
 	a.threema.httpUploadPath = "/tmp"
-	dataMsg := o3.ImageMessage{
+	dataMsg = o3.ImageMessage{
 		MessageHeader: &o3.MessageHeader{
 			Sender: threemaFromIDByte,
 		},
 	}
-	dataMsg = o3.ImageMessage{}
+	dataMsg = o3.ImageMessage{
+		MessageHeader: &o3.MessageHeader{
+			Sender: threemaFromIDByte,
+		},
+	}
 	_, err = a.receiving(dataMsg)
 	assert.Error(err)
 }
-*/
 
 func TestReceiveDeliveryReceipt(t *testing.T) {
 	assert := assert.New(t)

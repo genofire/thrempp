@@ -113,8 +113,9 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 
 	// send text message
 	msg3 := &o3.TextMessage{
-		MessageHeader: header,
-		Body:          msg.Body,
+		GroupMessageHeader: groupHeader,
+		MessageHeader:      header,
+		Body:               msg.Body,
 	}
 	logger = logger.WithFields(map[string]interface{}{
 		"x_id": msg.Id,
@@ -124,10 +125,7 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 	if groupHeader != nil {
 		logger.Debug("send grouptext")
 		// TODO iterate of all occupants
-		return &o3.GroupTextMessage{
-			GroupMessageHeader: groupHeader,
-			TextMessage:        msg3,
-		}, nil
+		return msg3, nil
 	}
 	a.deliveredMSG[msg3ID] = msg.Id
 	a.readedMSG[msg3ID] = msg.Id

@@ -20,6 +20,7 @@ func createDummyAccount() Account {
 	a := Account{
 		deliveredMSG: make(map[uint64]string),
 		readedMSG:    make(map[uint64]string),
+		xmpp:         make(chan<- stanza.Packet),
 	}
 	a.TID = make([]byte, len(threemaFromIDByte))
 	copy(a.TID, threemaFromIDByte[:])

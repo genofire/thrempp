@@ -68,11 +68,19 @@ func (t *Threema) Send(packet stanza.Packet) {
 func (t *Threema) send(packet stanza.Packet) stanza.Packet {
 	switch p := packet.(type) {
 	case stanza.Presence:
-		log.Debug(p)
+		from := models.ParseJID(p.Attrs.From)
+		account, err := t.getAccount(from)
+		if err != nil {
+			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
+			msg.Body = "It was not possible to send, because we have no account for you.\nPlease generate one, by sending `generate` to this gateway"
+			return msg
+		}
+		account.handlePresence(p)
 		return nil
 	case stanza.Message:
 		from := models.ParseJID(p.Attrs.From)
 		to := models.ParseJID(p.Attrs.To)
+
 		if p.Attrs.Type == stanza.MessageTypeError {
 			msg := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: from.String()})
 			if p.Error.Text == "User session not found" {

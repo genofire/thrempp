@@ -2,14 +2,73 @@ package threema
 
 import (
 	"encoding/base32"
+	"encoding/xml"
 	"strconv"
 	"strings"
 
 	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
+	"gosrc.io/xmpp"
 	"gosrc.io/xmpp/stanza"
 )
 
+type PresMUCUserItem struct {
+	XMLName     xml.Name `xml:"item"`
+	Affiliation string   `xml:"affiliation,attr"`
+	Role        string   `xml:"role,attr"`
+}
+type PresMUCUserStatus struct {
+	XMLName xml.Name `xml:"status"`
+	Code    int      `xml:"code,attr"`
+}
+
+type PresMUCUserList struct {
+	XMLName xml.Name `xml:"http://jabber.org/protocol/muc#user x"`
+	Items   []PresMUCUserItem
+	Status  *PresMUCUserStatus
+}
+
+func (a *Account) handlePresence(p stanza.Presence) error {
+	logger := log.WithFields(map[string]interface{}{
+		"from": p.Attrs.From,
+		"to":   p.Attrs.To,
+	})
+	_, header := jidToThreemaGroup(p.To)
+	if header == nil {
+		logger.Debug("no group presence")
+		return nil
+	}
+
+	from, _ := xmpp.NewJid(p.From)
+	to, _ := xmpp.NewJid(p.To)
+
+	if a.XMPPResource[to.Node] == nil {
+		a.XMPPResource[to.Node] = make(map[string]bool)
+	}
+	a.XMPPResource[to.Node][from.Resource] = true
+
+	ownsender := strings.ToLower(a.ThreemaID.ID.String())
+	//TODO list current users
+	senders := []string{header.CreatorID.String(), ownsender}
+	for _, sender := range senders {
+		sender = strings.ToLower(sender)
+		pres := stanza.NewPresence(stanza.Attrs{To: p.Attrs.From, From: jidFromThreemaGroup(sender, header)})
+		presMUCUserList := PresMUCUserList{
+			Items: []PresMUCUserItem{
+				{
+					Affiliation: "admin",
+					Role:        "moderator",
+				},
+			},
+		}
+		if sender == ownsender {
+			presMUCUserList.Status = &PresMUCUserStatus{Code: 110}
+		}
+		pres.Extensions = append(pres.Extensions, presMUCUserList)
+		a.xmpp <- pres
+	}
+	return nil
+}
 func (a *Account) Send(to string, msg stanza.Message) error {
 	m, err := a.sending(to, msg)
 	if err != nil {
@@ -125,6 +184,7 @@ func (a *Account) sending(to string, msg stanza.Message) (o3.Message, error) {
 	if groupHeader != nil {
 		logger.Debug("send grouptext")
 		// TODO iterate of all occupants
+		//msg3.GroupMessageHeader.Recipient: o3.NewIDString(to),
 		return msg3, nil
 	}
 	a.deliveredMSG[msg3ID] = msg.Id

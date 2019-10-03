@@ -16,16 +16,32 @@ func (c *Config) sender(packets chan stanza.Packet) {
 	}
 }
 
+func (c *Config) fixAddr(addr string) string {
+	if addr == "" {
+		return c.Host
+	}
+	if strings.Contains(addr, "{{DOMAIN}}") {
+		return strings.Replace(addr, "{{DOMAIN}}", c.Host, 1)
+	}
+	if !strings.Contains(addr, "@") {
+		return addr + "@" + c.Host
+	}
+	return addr
+}
+
 func (c *Config) sending(packet stanza.Packet) stanza.Packet {
 	logger := log.WithField("type", c.Type)
 	switch p := packet.(type) {
+	case stanza.Presence:
+		p.From = c.fixAddr(p.From)
+		if p.To != "" {
+			p.To = c.fixAddr(p.To)
+		}
+		return p
 	case stanza.Message:
-		if p.From == "" {
-			p.From = c.Host
-		} else if strings.Contains(p.From, "{{DOMAIN}}") {
-			p.From = strings.Replace(p.From, "{{DOMAIN}}", c.Host, 1)
-		} else {
-			p.From += "@" + c.Host
+		p.From = c.fixAddr(p.From)
+		if p.To != "" {
+			p.To = c.fixAddr(p.To)
 		}
 		if c.XMPPDebug {
 			logger.WithFields(map[string]interface{}{

@@ -72,7 +72,7 @@ func (c *Config) handleDiscoItems(s xmpp.Sender, p stanza.Packet) {
 
 	log.WithFields(map[string]interface{}{
 		"type": c.Type,
-		"from": s,
+		"id":   attrs.Id,
 		"to":   attrs.To,
 	}).Debug("disco items")
 	s.Send(iq)
@@ -92,28 +92,32 @@ func (c *Config) handleIQ(s xmpp.Sender, p stanza.Packet) {
 
 	log.WithFields(map[string]interface{}{
 		"type": c.Type,
-		"from": s,
 		"to":   attrs.To,
-	}).Debugf("ignore: %s", iq.Payload)
+		"id":   attrs.Id,
+	}).Debugf("ignore: %v", iq.Payload)
 	s.Send(resp)
 }
 func (c *Config) handleMessage(s xmpp.Sender, p stanza.Packet) {
 	msg, ok := p.(stanza.Message)
-	attr := msg.Attrs
+	attrs := msg.Attrs
 	if !ok {
-		pr, ok := p.(stanza.Message)
-		attr = pr.Attrs
+		pr, ok := p.(stanza.Presence)
+		attrs = pr.Attrs
 		if !ok {
 			return
 		}
 	}
+	logger := log.WithFields(map[string]interface{}{
+		"type": c.Type,
+		"id":   attrs.Id,
+		"to":   attrs.To,
+	})
+	if attrs.Type == "error" {
+		logger.Error(msg.XMPPFormat())
+		return
+	}
 	if c.XMPPDebug {
-		log.WithFields(map[string]interface{}{
-			"type": c.Type,
-			"from": s,
-			"to":   attr.To,
-			"id":   attr.Id,
-		}).Debug(msg.XMPPFormat())
+		logger.Debug(msg.XMPPFormat())
 	}
 	c.comp.Send(p)
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/o3ma/o3"
+	"gosrc.io/xmpp/stanza"
 
 	"dev.sum7.eu/genofire/golang-lib/database"
 
@@ -16,8 +17,10 @@ type Account struct {
 	ThreemaID    *o3.ThreemaID
 	send         chan<- o3.Message
 	receive      <-chan o3.ReceivedMsg
+	xmpp         chan<- stanza.Packet
 	deliveredMSG map[uint64]string
 	readedMSG    map[uint64]string
+	XMPPResource map[string]map[string]bool
 }
 
 func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
@@ -48,6 +51,10 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 		AccountThreema: account,
 		ThreemaID:      &tid,
 		threema:        t,
+		xmpp:           t.out,
+		XMPPResource:   make(map[string]map[string]bool),
+		deliveredMSG:   make(map[uint64]string),
+		readedMSG:      make(map[uint64]string),
 	}
 	session := o3.NewSessionContext(tid)
 	a.send, a.receive, err = session.Run()
@@ -57,10 +64,8 @@ func (t *Threema) getAccount(jid *models.JID) (*Account, error) {
 	}
 
 	a.XMPP = *jid
-	a.deliveredMSG = make(map[uint64]string)
-	a.readedMSG = make(map[uint64]string)
 
-	go a.receiver(t.out)
+	go a.receiver()
 
 	t.accountJID[jid.String()] = a
 	return a, nil

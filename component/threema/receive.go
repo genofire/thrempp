@@ -1,7 +1,6 @@
 package threema
 
 import (
-	"encoding/base32"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,16 +8,17 @@ import (
 
 	"github.com/bdlm/log"
 	"github.com/o3ma/o3"
+	"gosrc.io/xmpp"
 	"gosrc.io/xmpp/stanza"
 )
 
-func (a *Account) receiver(out chan<- stanza.Packet) {
+func (a *Account) receiver() {
 	for receivedMessage := range a.receive {
 		if receivedMessage.Err != nil {
 			log.Warnf("Error Receiving Message: %s\n", receivedMessage.Err)
 			xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, To: a.XMPP.String()})
 			xMSG.Body = fmt.Sprintf("error on decoding message:\n%v", receivedMessage.Err)
-			out <- xMSG
+			a.xmpp <- xMSG
 			continue
 		}
 		header := receivedMessage.Msg.Header()
@@ -26,12 +26,36 @@ func (a *Account) receiver(out chan<- stanza.Packet) {
 		if string(a.TID) == sender {
 			continue
 		}
-		if p, err := a.receiving(receivedMessage.Msg); err != nil {
+		if p, gh, err := a.receiving(receivedMessage.Msg); err != nil {
 			xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
 			xMSG.Body = fmt.Sprintf("error on decoding message: %s\n%v", err, receivedMessage.Msg)
-			out <- xMSG
-		} else if p != nil {
-			out <- p
+			a.xmpp <- xMSG
+		} else {
+			if gh != nil {
+				xid := &xmpp.Jid{
+					Node:   a.XMPP.Local,
+					Domain: a.XMPP.Domain,
+				}
+				id := strFromThreemaGroup(gh)
+				if len(a.XMPPResource[id]) == 0 {
+					xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
+					//TODO please join
+					xMSG.Body = fmt.Sprintf(`ERROR: group message not delievered, please join
+xmpp:%s@{{DOMAIN}}?join`, id)
+					a.xmpp <- xMSG
+					continue
+				}
+				for r := range a.XMPPResource[id] {
+					xid.Resource = r
+					switch m := p.(type) {
+					case stanza.Message:
+						m.Attrs.To = xid.Full()
+						a.xmpp <- m
+					}
+				}
+			} else {
+				a.xmpp <- p
+			}
 		}
 	}
 }
@@ -42,13 +66,7 @@ func requestExtensions(xMSG *stanza.Message) {
 	xMSG.Extensions = append(xMSG.Extensions, stanza.StateActive{})
 }
 
-func jidFromThreemaGroup(sender string, header *o3.GroupMessageHeader) string {
-	cid := strings.ToLower(header.CreatorID.String())
-	gid := strings.ToLower(base32.StdEncoding.EncodeToString(header.GroupID[:]))
-	return fmt.Sprintf("%s-%s@{{DOMAIN}}/%s", cid, gid, sender)
-}
-
-func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
+func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, *o3.GroupMessageHeader, error) {
 	header := receivedMessage.Header()
 	sender := header.Sender.String()
 	logger := log.WithFields(map[string]interface{}{
@@ -62,53 +80,65 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 		dbText := "recv text"
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		if msg.GroupMessageHeader != nil {
-			xMSG = stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeGroupchat, From: jidFromThreemaGroup(sender, msg.GroupMessageHeader), To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
+			to := a.XMPP.String()
+			ad := strings.SplitN(msg.Body, "=", 2)
+			from := sender
+			if len(ad) == 2 {
+				from = strings.ToLower(ad[0])[:len(ad[0])-3]
+			}
+			xMSG = stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeGroupchat, From: jidFromThreemaGroup(from, msg.GroupMessageHeader), To: to, Id: strconv.FormatUint(header.ID, 10)})
+			if len(ad) == 2 {
+				xMSG.Body = ad[1][4:]
+			} else {
+				xMSG.Body = msg.Body
+			}
 			dbText = "recv grouptext"
 		} else {
+			xMSG.Body = msg.Body
 			requestExtensions(&xMSG)
 		}
-		xMSG.Body = msg.Body
 		logger.WithFields(map[string]interface{}{
 			"from_x": xMSG.From,
 			"id":     xMSG.Id,
 			"text":   xMSG.Body,
 		}).Debug(dbText)
-		return xMSG, nil
+		return xMSG, msg.GroupMessageHeader, nil
 	case *o3.AudioMessage:
 		if a.threema.httpUploadPath == "" {
-			return nil, errors.New("no place to store files at transport configurated")
+			return nil, nil, errors.New("no place to store files at transport configurated")
 		}
 		data, err := msg.GetData()
 		if err != nil {
 			logger.Warnf("unable to read data from message: %s", err)
-			return nil, err
+			return nil, nil, err
 		}
 		xMSG, err := a.FileToXMPP(sender, header.ID, "mp3", data)
 		if err != nil {
 			logger.Warnf("unable to create data from message: %s", err)
-			return nil, err
+			return nil, nil, err
 		}
 		requestExtensions(&xMSG)
 		logger.WithField("url", xMSG.Body).Debug("recv audio")
-		return xMSG, nil
+		return xMSG, nil, nil
 
 	case *o3.ImageMessage:
 		if a.threema.httpUploadPath == "" {
-			return nil, errors.New("no place to store files at transport configurated")
+			return nil, nil, errors.New("no place to store files at transport configurated")
 		}
 		data, err := msg.GetData(a.ThreemaID)
 		if err != nil {
 			logger.Warnf("unable to read data from message: %s", err)
-			return nil, err
+			return nil, nil, err
 		}
 		xMSG, err := a.FileToXMPP(sender, header.ID, "jpg", data)
 		if err != nil {
 			logger.Warnf("unable to create data from message: %s", err)
-			return nil, err
+			return nil, nil, err
 		}
 		requestExtensions(&xMSG)
 		logger.WithField("url", xMSG.Body).Debug("recv image")
-		return xMSG, nil
+		return xMSG, nil, nil
+
 	case *o3.DeliveryReceiptMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String()})
 		state := ""
@@ -135,9 +165,9 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 
 		if len(xMSG.Extensions) > 0 {
 			logger.WithField("state", state).Debug("recv state")
-			return xMSG, nil
+			return xMSG, nil, nil
 		}
-		return nil, nil
+		return nil, nil, nil
 	case *o3.TypingNotificationMessage:
 		xMSG := stanza.NewMessage(stanza.Attrs{Type: stanza.MessageTypeChat, From: sender, To: a.XMPP.String(), Id: strconv.FormatUint(header.ID, 10)})
 		if msg.OnOff != 0 {
@@ -146,7 +176,7 @@ func (a *Account) receiving(receivedMessage o3.Message) (stanza.Packet, error) {
 			xMSG.Extensions = append(xMSG.Extensions, stanza.StateInactive{})
 		}
 		logger.WithField("on", msg.OnOff).Debug("recv typing")
-		return xMSG, nil
+		return xMSG, nil, nil
 	}
-	return nil, errors.New("not known data format")
+	return nil, nil, errors.New("not known data format")
 }

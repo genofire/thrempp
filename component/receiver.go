@@ -31,7 +31,7 @@ func (c *Config) handleDiscoInfo(s xmpp.Sender, p stanza.Packet) {
 			{Var: stanza.NSMsgReceipts},
 			{Var: stanza.NSMsgChatMarkers},
 			{Var: stanza.NSMsgChatStateNotifications},
-			{Var: "http://jabber.org/protocol/muc"},
+			// {Var: "http://jabber.org/protocol/muc"},
 		},
 	}
 	if discoInfo.Node == "" {
